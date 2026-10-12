@@ -86,11 +86,12 @@ test('오늘 24시간이 세로 타임라인으로 표시됨', async ({ page }) 
 
 test('타임라인의 더하기 버튼으로 해당 시간 기록을 바로 시작', async ({ page }) => {
   await page.locator('[data-add-hour="14"]').click();
-  await expect(page.locator('#start')).toHaveValue('14:00');
-  await expect(page.locator('#end')).toHaveValue('15:00');
-  await expect(page.locator('#name')).toBeFocused();
+  const form = page.locator('.timeline-quick-form');
+  await expect(form).toBeVisible();
+  await expect(form.locator('.timeline-quick-start')).toHaveValue('14:00');
+  await expect(form.locator('.timeline-quick-end')).toHaveValue('15:00');
+  await expect(form.locator('.timeline-quick-name')).toBeFocused();
 });
-
 test('작은 모바일 화면에서 가로 넘침이 없음', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.reload();
