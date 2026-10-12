@@ -1,11 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.goto('/');
+  await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
   });
-  await page.goto('/');
+  await page.reload();
 });
 
 test('기록 추가와 시간 합계 계산', async ({ page }) => {
