@@ -32,12 +32,47 @@ test('기록이 새로고침 후에도 저장됨', async ({ page }) => {
   await page.locator('#entryForm button[type="submit"]').click();
   await page.reload();
   await expect(page.locator('#entries')).toContainText('저장 확인 기록');
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
 });
 
-test('할 일 추가와 완료 체크', async ({ page }) => {
+test('겹치는 실제 기록은 중복 저장하지 않음', async ({ page }) => {
+  await page.locator('#name').fill('첫 번째 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('첫 번째 기록');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#name').fill('겹치는 기록');
+  await page.locator('#start').fill('09:30');
+  await page.locator('#end').fill('10:30');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect(page.locator('#entries')).toContainText('첫 번째 기록');
+  await expect(page.locator('#entries')).not.toContainText('겹치는 기록');
+  await expect(page.locator('#count')).toHaveText('1');
+});
+
+test('할 일 추가, 완료 체크 및 새로고침 유지', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
   await expect(page.locator('#todoPanel')).toBeVisible();
   await page.locator('#todoText').fill('자동 테스트 할 일');
   await page.locator('#todoForm button[type="submit"]').click();
   await expect(page.locator('#todos')).toContainText('자동 테스트 할 일');
+
+  await page.locator('#todos input[type="checkbox"]').check();
+  await expect(page.locator('#todos .todo')).toHaveClass(/done/);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos .todo')).toHaveClass(/done/);
+});
+
+test('실행 취소로 직전 기록 추가를 되돌림', async ({ page }) => {
+  await page.locator('#name').fill('취소 대상 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('취소 대상 기록');
+  await expect(page.locator('#undoLastChange')).toBeEnabled();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#undoLastChange').click();
+  await expect(page.locator('#entries')).not.toContainText('취소 대상 기록');
+  await expect(page.locator('#count')).toHaveText('0');
 });
