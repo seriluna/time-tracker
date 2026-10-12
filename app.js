@@ -110,6 +110,16 @@ document.addEventListener('click',e=>{
  }
  if(b.dataset.deleteRepeat){const name=b.dataset.deleteRepeat,count=s.entries.filter(x=>x.kind==='planned'&&x.note==='반복 일정: '+name).length;if(!confirm('반복 일정 "'+name+'"의 계획 '+count+'개를 모두 삭제할까요?'))return;s.entries=s.entries.filter(x=>!(x.kind==='planned'&&x.note==='반복 일정: '+name));save();render();alert('반복 일정 묶음을 삭제했어요.')}
  if(b.dataset.deleteTemplate){templates=templates.filter(x=>x.id!==b.dataset.deleteTemplate);saveTemplates();renderTemplates()}
+ if(b.id==='bulkUpdateEntries'){
+ const visible=[...document.querySelectorAll('[data-entry-check]')].map(x=>x.dataset.entryCheck),chosen=visible.filter(id=>selectedEntryIds.has(id));if(!chosen.length){alert('수정할 기록을 선택해 주세요.');return}
+ const kind=$('bulkKind').value,cat=$('bulkCat').value.trim(),changeCat=cat.length>0;if(!kind&&!changeCat){alert('변경할 기록 종류 또는 분류를 선택·입력해 주세요.');return}
+ const updates=s.entries.filter(x=>chosen.includes(x.id)).map(x=>({...x,kind:kind||x.kind,cat:changeCat?cat:x.cat}));
+ const chosenSet=new Set(chosen),conflict=updates.some((x,i)=>updates.some((y,j)=>j<i&&x.date===y.date&&x.kind===y.kind&&x.id!==y.id&&min(x.start)<min(y.end)&&min(x.end)>min(y.start))||s.entries.some(y=>!chosenSet.has(y.id)&&y.date===x.date&&y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start)));
+ if(conflict){alert('변경 후 같은 날짜·종류의 기록 시간이 겹칩니다. 종류를 바꾸거나 기록을 나누어 수정해 주세요.');return}
+ const changes=[];if(kind)changes.push(kind==='planned'?'계획':'실제 기록');if(changeCat)changes.push('분류 "'+cat+'"');
+ if(!confirm('선택한 '+chosen.length+'개 기록의 '+changes.join(' 및 ')+'을 변경할까요?'))return;
+ s.entries=s.entries.map(x=>chosenSet.has(x.id)?{...x,kind:kind||x.kind,cat:changeCat?cat:x.cat}:x);save();$('bulkKind').value='';$('bulkCat').value='';render();alert(chosen.length+'개 기록을 수정했어요.');
+ }
  if(b.id==='bulkDeleteEntries'){const visible=[...document.querySelectorAll('[data-entry-check]')].map(x=>x.dataset.entryCheck),chosen=visible.filter(id=>selectedEntryIds.has(id));if(!chosen.length){alert('삭제할 기록을 선택해 주세요.');return}if(!confirm('선택한 '+chosen.length+'개 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;s.entries=s.entries.filter(x=>!chosen.includes(x.id));chosen.forEach(id=>selectedEntryIds.delete(id));save();render();alert(chosen.length+'개 기록을 삭제했어요.')}
  if(b.dataset.edit){const x=s.entries.find(x=>x.id===b.dataset.edit);if(x){editId=x.id;$('day').value=x.date;$('name').value=x.name;$('start').value=x.start;$('end').value=x.end;$('kind').value=x.kind;$('cat').value=x.cat||'';$('note').value=x.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
  if(b.dataset.del){if(editId===b.dataset.del)resetEntryForm();s.entries=s.entries.filter(x=>x.id!==b.dataset.del);save();render()}
