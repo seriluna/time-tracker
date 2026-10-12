@@ -67,7 +67,34 @@ function renderCalendar(){
  }
  $('calendar').innerHTML=cells.join('');
 }
+function renderTimeline(){
+ const date=$('day').value||today();
+ const dayEntries=s.entries.filter(e=>e.date===date).sort((a,b)=>a.start.localeCompare(b.start));
+ const actual=dayEntries.filter(e=>e.kind==='actual').reduce((n,e)=>n+dur(e),0);
+ $('timelineTotal').textContent='실제 '+fmt(actual);
+ const rows=[];
+ for(let h=0;h<24;h++){
+  const hour=String(h).padStart(2,'0'),start=h*60,end=start+60;
+  const hits=dayEntries.filter(e=>min(e.start)<end&&min(e.end)>start);
+  const cards=hits.map(e=>{
+   const from=Math.max(start,min(e.start)),to=Math.min(end,min(e.end));
+   const label=(from===min(e.start)?e.start:hour+':00')+'–'+(to===min(e.end)?e.end:String(Math.floor(to/60)).padStart(2,'0')+':'+String(to%60).padStart(2,'0'));
+   return '<button type="button" class="timeline-item '+(e.kind==='planned'?'planned':'actual')+'" data-timeline-entry="'+esc(e.id)+'" aria-label="'+esc(e.name)+' '+label+' 수정"><span>'+esc(e.name)+'</span><small>'+label+'</small></button>';
+  }).join('');
+  rows.push('<div class="timeline-hour" data-hour="'+hour+'"><div class="timeline-label">'+hour+':00</div><div class="timeline-slot">'+(cards||'<div class="timeline-empty">비어 있음</div>')+'</div><button type="button" class="timeline-add" data-add-hour="'+hour+'" aria-label="'+hour+'시 기록 추가">＋</button></div>');
+ }
+ $('timelineGrid').innerHTML=rows.join('');
+}
+function startQuickEntry(hour){
+ resetEntryForm();
+ $('start').value=hour+':00';
+ $('end').value=String((Number(hour)+1)%24).padStart(2,'0')+':00';
+ $('kind').value='actual';
+ $('name').focus({preventScroll:true});
+ $('entryForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
 function render(){
+ renderTimeline();
  const date=$('day').value,es=s.entries.filter(e=>e.date===date).sort((a,b)=>a.start.localeCompare(b.start));
  const p=es.filter(e=>e.kind==='planned').reduce((n,e)=>n+dur(e),0),a=es.filter(e=>e.kind==='actual').reduce((n,e)=>n+dur(e),0);
  $('planned').textContent=fmt(p);$('actual').textContent=fmt(a);$('count').textContent=es.length;
@@ -106,6 +133,11 @@ $('entryForm').onsubmit=e=>{
 };
 $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
+ const quick=e.target.closest('[data-add-hour]');
+ if(quick){startQuickEntry(quick.dataset.addHour);return}
+ const timelineEntry=e.target.closest('[data-timeline-entry]');
+ if(timelineEntry){const item=s.entries.find(x=>x.id===timelineEntry.dataset.timelineEntry);if(item){$('day').value=item.date;const target=document.querySelector('[data-edit="'+CSS.escape(item.id)+'"]');if(target)target.click();else{const id=item.id;editId=id;$('name').value=item.name;$('start').value=item.start;$('end').value=item.end;$('kind').value=item.kind;$('cat').value=item.cat||'';$('note').value=item.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'center'})}}return}
+
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='generateRepeat'){
  const start=$('repeatStart').value,end=$('repeatEnd').value,days=[...document.querySelectorAll('[name="repeatDay"]:checked')].map(x=>Number(x.value)),chosen=[...document.querySelectorAll('[data-template-check]:checked')].map(x=>templates.find(t=>t.id===x.dataset.templateCheck)).filter(Boolean);
