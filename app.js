@@ -5,6 +5,15 @@ try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entr
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
 let lastPersistedRaw=JSON.stringify(s);
 let templates;try{templates=JSON.parse(localStorage.getItem(TEMPLATE_KEY))||[]}catch{templates=[]}if(!Array.isArray(templates))templates=[];const saveTemplates=()=>localStorage.setItem(TEMPLATE_KEY,JSON.stringify(templates));
+function updateUndoStatus(){
+ const button=$('undoLastChange'),status=$('undoStatus');
+ if(!button||!status)return;
+ const raw=localStorage.getItem(UNDO_KEY);
+ let available=false;
+ if(raw){try{const data=JSON.parse(raw);available=!!(data&&Array.isArray(data.entries)&&Array.isArray(data.todos))}catch{available=false}}
+ button.disabled=!available;
+ status.textContent=available?'직전 변경 사항을 실행 취소할 수 있습니다.':'되돌릴 이전 변경 사항이 없습니다.';
+}
 const AUTO_BACKUP_KEY='time-tracker-auto-backup-v1',AUTO_BACKUP_TIME_KEY='time-tracker-auto-backup-time';
 let lastSaveError='';
 const save=()=>{try{const raw=JSON.stringify(s);localStorage.setItem(UNDO_KEY,lastPersistedRaw);localStorage.setItem(KEY,raw);lastPersistedRaw=raw;localStorage.setItem(AUTO_BACKUP_KEY,raw);localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString());lastSaveError='';updateAutoBackupStatus();runStorageHealthCheck();updateUndoStatus();return true}catch(err){lastSaveError=String(err&&err.message||err);updateAutoBackupStatus();runStorageHealthCheck();updateUndoStatus();alert('저장에 실패했습니다. 기기 저장 공간을 확인하고 JSON 백업 파일을 내려받아 주세요.');return false}};
