@@ -12,6 +12,12 @@ const min=t=>{let [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m};
 const dur=e=>Math.max(0,min(e.end)-min(e.start));
 const fmt=n=>Math.floor(n/60)?Math.floor(n/60)+'시간 '+n%60+'분':n+'분';
 const esc=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderRepeatGroups(){
+ const groups={};
+ s.entries.filter(e=>e.kind==='planned'&&String(e.note||'').startsWith('반복 일정: ')).forEach(e=>{const name=e.note.slice('반복 일정: '.length);(groups[name]??=[]).push(e)});
+ const names=Object.keys(groups).sort();
+ $('repeatGroups').innerHTML=names.length?names.map(name=>{const items=groups[name].sort((a,b)=>a.date.localeCompare(b.date));return '<div class="repeat-group"><div><b>'+esc(name)+'</b><small>'+items[0].date+' ~ '+items[items.length-1].date+' · '+items.length+'개</small></div><button type="button" class="delete" data-delete-repeat="'+esc(name)+'">묶음 삭제</button></div>'}).join(''):'<p class="muted">생성된 반복 일정이 없습니다.</p>';
+}
 function renderTemplates(){
  $('templates').innerHTML=templates.length?templates.map(t=>'<div class="template-item"><label class="template-check"><input type="checkbox" data-template-check="'+esc(t.id)+'"><span>'+esc(t.name)+'</span></label><button type="button" class="template-use" data-use-template="'+esc(t.id)+'"><small>'+esc(t.activity)+' · '+t.start+'–'+t.end+' · '+(t.kind==='planned'?'计划':'实际')+'</small></button><button type="button" class="delete" data-delete-template="'+esc(t.id)+'" aria-label="删除模板">×</button></div>').join(''):'<p class="muted">저장한 템플릿이 없습니다. 아래에서 추가해 보세요.</p>';
 }
@@ -49,7 +55,7 @@ function render(){
  $('monthStats').innerHTML='<div class="periodtotal">월간 실제 기록 <b>'+fmt(monthTotal)+'</b></div><div class="periodrow"><span>실제 기록한 날짜</span><b>'+days+'일</b></div><div class="periodrow"><span>기록일 평균</span><b>'+fmt(days?Math.round(monthTotal/days):0)+'</b></div>';
  const mg=monthGoal*60,mp=mg?Math.min(100,Math.round(monthTotal/mg*100)):0;$('monthGoalProgress').style.width=mp+'%';$('monthGoalMessage').textContent=monthTotal>=mg?'월간 목표 달성! '+fmt(monthTotal):'월간 목표의 '+mp+'% · '+fmt(Math.max(0,mg-monthTotal))+' 남음';
 
- renderCalendar();renderTemplates();
+ renderCalendar();renderTemplates();renderRepeatGroups();
 }
 function resetEntryForm(){editId=null;$('entryForm').reset();$('start').value='09:00';$('end').value='10:00';$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
 $('templateForm').onsubmit=e=>{e.preventDefault();const name=$('templateName').value.trim(),activity=$('templateActivity').value.trim(),start=$('templateStart').value,end=$('templateEnd').value;if(!name||!activity||!start||!end||min(end)<=min(start)){alert('템플릿 이름, 활동명과 올바른 시간을 입력해 주세요.');return}templates.push({id:Date.now().toString(),name,activity,start,end,kind:$('templateKind').value,cat:$('templateCat').value.trim()});saveTemplates();$('templateForm').reset();$('templateStart').value='07:00';$('templateEnd').value='08:00';renderTemplates()};
@@ -83,6 +89,7 @@ document.addEventListener('click',e=>{
  }
  if(b.id==='batchTemplates'){const chosen=[...document.querySelectorAll('[data-template-check]:checked')].map(x=>templates.find(t=>t.id===x.dataset.templateCheck)).filter(Boolean);if(!chosen.length){alert('먼저 템플릿을 선택해 주세요.');return}const date=$('day').value||today(),newEntries=chosen.map((t,i)=>({id:Date.now().toString()+'-'+i,date,name:t.activity,start:t.start,end:t.end,kind:t.kind,cat:t.cat||'',note:''}));if(newEntries.some(x=>min(x.end)<=min(x.start))){alert('시간이 올바르지 않은 템플릿이 포함되어 있어요. 템플릿 시간을 수정해 주세요.');return}const conflict=newEntries.some((x,i)=>s.entries.some(y=>y.date===date&&y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start))||newEntries.slice(0,i).some(y=>y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start)));if(conflict){alert('선택한 템플릿이 기존 기록 또는 서로 겹칩니다. 중복을 해결한 뒤 다시 시도해 주세요.');return}if(!confirm('선택한 템플릿 '+newEntries.length+'개를 '+date+'에 추가할까요?'))return;s.entries.push(...newEntries);save();render();alert(newEntries.length+'개 기록을 추가했어요.')}
  if(b.dataset.useTemplate){const t=templates.find(x=>x.id===b.dataset.useTemplate);if(t){resetEntryForm();$('name').value=t.activity;$('start').value=t.start;$('end').value=t.end;$('kind').value=t.kind;$('cat').value=t.cat||'';$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
+ if(b.dataset.deleteRepeat){const name=b.dataset.deleteRepeat,count=s.entries.filter(x=>x.kind==='planned'&&x.note==='반복 일정: '+name).length;if(!confirm('반복 일정 "'+name+'"의 계획 '+count+'개를 모두 삭제할까요?'))return;s.entries=s.entries.filter(x=>!(x.kind==='planned'&&x.note==='반복 일정: '+name));save();render();alert('반복 일정 묶음을 삭제했어요.')}
  if(b.dataset.deleteTemplate){templates=templates.filter(x=>x.id!==b.dataset.deleteTemplate);saveTemplates();renderTemplates()}
  if(b.dataset.edit){const x=s.entries.find(x=>x.id===b.dataset.edit);if(x){editId=x.id;$('day').value=x.date;$('name').value=x.name;$('start').value=x.start;$('end').value=x.end;$('kind').value=x.kind;$('cat').value=x.cat||'';$('note').value=x.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
  if(b.dataset.del){if(editId===b.dataset.del)resetEntryForm();s.entries=s.entries.filter(x=>x.id!==b.dataset.del);save();render()}
