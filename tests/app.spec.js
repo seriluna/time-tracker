@@ -76,3 +76,27 @@ test('실행 취소로 직전 기록 추가를 되돌림', async ({ page }) => {
   await expect(page.locator('#entries')).not.toContainText('취소 대상 기록');
   await expect(page.locator('#count')).toHaveText('0');
 });
+
+test('오늘 24시간이 세로 타임라인으로 표시됨', async ({ page }) => {
+  await expect(page.locator('#dayTimeline')).toBeVisible();
+  await expect(page.locator('.timeline-hour')).toHaveCount(24);
+  await expect(page.locator('.timeline-hour').first()).toContainText('00:00');
+  await expect(page.locator('.timeline-hour').last()).toContainText('23:00');
+});
+
+test('타임라인의 더하기 버튼으로 해당 시간 기록을 바로 시작', async ({ page }) => {
+  await page.locator('[data-add-hour="14"]').click();
+  await expect(page.locator('#start')).toHaveValue('14:00');
+  await expect(page.locator('#end')).toHaveValue('15:00');
+  await expect(page.locator('#name')).toBeFocused();
+});
+
+test('작은 모바일 화면에서 가로 넘침이 없음', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.reload();
+  const sizes = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+  }));
+  expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+});
