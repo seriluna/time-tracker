@@ -1,1 +1,19 @@
-{"name":"시간 기록","short_name":"시간기록","description":"개인 시간 계획과 실제 기록","lang":"ko","start_url":"./","scope":"./","display":"standalone","background_color":"#f6f7fb","theme_color":"#f6f7fb"}
+{
+  "name": "시간 기록",
+  "short_name": "시간기록",
+  "description": "개인 시간 계획과 실제 기록",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#5059a8",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
