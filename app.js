@@ -6,6 +6,7 @@ if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]
 let templates;try{templates=JSON.parse(localStorage.getItem(TEMPLATE_KEY))||[]}catch{templates=[]}if(!Array.isArray(templates))templates=[];const saveTemplates=()=>localStorage.setItem(TEMPLATE_KEY,JSON.stringify(templates));
 const AUTO_BACKUP_KEY='time-tracker-auto-backup-v1',AUTO_BACKUP_TIME_KEY='time-tracker-auto-backup-time';
 const save=()=>{const raw=JSON.stringify(s);localStorage.setItem(KEY,raw);localStorage.setItem(AUTO_BACKUP_KEY,raw);localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString());updateAutoBackupStatus()};
+if(!localStorage.getItem(AUTO_BACKUP_KEY)&&localStorage.getItem(KEY)){localStorage.setItem(AUTO_BACKUP_KEY,localStorage.getItem(KEY));localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString())}
 const updateAutoBackupStatus=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY),stamp=localStorage.getItem(AUTO_BACKUP_TIME_KEY);$('autoBackupStatus').textContent=raw?'최근 자동 저장: '+(stamp?new Date(stamp).toLocaleString():'시간 정보 없음')+' · 별도 파일 백업도 권장합니다.':'자동 백업이 아직 없습니다.'};
 const downloadBackup=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY);if(!raw){alert('다운로드할 자동 백업이 없습니다. 먼저 기록을 저장해 주세요.');return}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.href=u;a.download='time-tracker-auto-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 
