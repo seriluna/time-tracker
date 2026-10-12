@@ -66,6 +66,21 @@ $('entryForm').onsubmit=e=>{
 $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
+ if(b.id==='generateRepeat'){
+ const start=$('repeatStart').value,end=$('repeatEnd').value,days=[...document.querySelectorAll('[name="repeatDay"]:checked')].map(x=>Number(x.value)),chosen=[...document.querySelectorAll('[data-template-check]:checked')].map(x=>templates.find(t=>t.id===x.dataset.templateCheck)).filter(Boolean);
+ if(!start||!end||end<start){alert('시작일과 종료일을 올바르게 선택해 주세요.');return}
+ const startDate=new Date(start+'T12:00:00'),endDate=new Date(end+'T12:00:00'),span=Math.round((endDate-startDate)/86400000)+1;
+ if(span>90){alert('반복 일정은 한 번에 최대 90일까지 생성할 수 있어요.');return}
+ if(!days.length){alert('반복할 요일을 하나 이상 선택해 주세요.');return}
+ if(!chosen.length){alert('먼저 반복할 템플릿을 선택해 주세요.');return}
+ const plans=[];
+ for(let d=new Date(startDate);d<=endDate;d.setDate(d.getDate()+1)){if(!days.includes(d.getDay()))continue;const date=dateStr(d);for(const t of chosen){if(min(t.end)<=min(t.start)){alert('시간이 올바르지 않은 템플릿이 있어요: '+t.name);return}plans.push({id:'repeat-'+date+'-'+t.id,date,name:t.activity,start:t.start,end:t.end,kind:'planned',cat:t.cat||'',note:'반복 일정: '+t.name})}}
+ if(!plans.length){alert('선택한 기간에 해당 요일이 없습니다.');return}
+ const seen=new Set();
+ for(const x of plans){const key=x.date+'|'+x.kind+'|'+x.start+'|'+x.end+'|'+x.name;if(seen.has(key)){alert('중복 템플릿이 있습니다. 선택을 확인해 주세요.');return}seen.add(key);if(s.entries.some(y=>y.date===x.date&&y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start))){alert(x.date+'에 기존 계획과 시간이 겹칩니다. 기록을 정리한 뒤 다시 시도해 주세요.');return}}
+ if(!confirm(plans.length+'개의 계획 기록을 생성할까요? 실제 기록은 생성하지 않습니다.'))return;
+ s.entries.push(...plans);save();$('day').value=start;render();alert(plans.length+'개의 반복 계획을 생성했어요.');
+ }
  if(b.id==='batchTemplates'){const chosen=[...document.querySelectorAll('[data-template-check]:checked')].map(x=>templates.find(t=>t.id===x.dataset.templateCheck)).filter(Boolean);if(!chosen.length){alert('먼저 템플릿을 선택해 주세요.');return}const date=$('day').value||today(),newEntries=chosen.map((t,i)=>({id:Date.now().toString()+'-'+i,date,name:t.activity,start:t.start,end:t.end,kind:t.kind,cat:t.cat||'',note:''}));if(newEntries.some(x=>min(x.end)<=min(x.start))){alert('시간이 올바르지 않은 템플릿이 포함되어 있어요. 템플릿 시간을 수정해 주세요.');return}const conflict=newEntries.some((x,i)=>s.entries.some(y=>y.date===date&&y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start))||newEntries.slice(0,i).some(y=>y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start)));if(conflict){alert('선택한 템플릿이 기존 기록 또는 서로 겹칩니다. 중복을 해결한 뒤 다시 시도해 주세요.');return}if(!confirm('선택한 템플릿 '+newEntries.length+'개를 '+date+'에 추가할까요?'))return;s.entries.push(...newEntries);save();render();alert(newEntries.length+'개 기록을 추가했어요.')}
  if(b.dataset.useTemplate){const t=templates.find(x=>x.id===b.dataset.useTemplate);if(t){resetEntryForm();$('name').value=t.activity;$('start').value=t.start;$('end').value=t.end;$('kind').value=t.kind;$('cat').value=t.cat||'';$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
  if(b.dataset.deleteTemplate){templates=templates.filter(x=>x.id!==b.dataset.deleteTemplate);saveTemplates();renderTemplates()}
