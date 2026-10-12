@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates';
-let editId=null,selectedEntryIds=new Set(),s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
+let editId=null,selectedEntryIds=new Set(),copiedDayEntries=[],s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entries:[],todos:[]}}
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
 let templates;try{templates=JSON.parse(localStorage.getItem(TEMPLATE_KEY))||[]}catch{templates=[]}if(!Array.isArray(templates))templates=[];const saveTemplates=()=>localStorage.setItem(TEMPLATE_KEY,JSON.stringify(templates));
@@ -110,6 +110,8 @@ document.addEventListener('click',e=>{
  }
  if(b.dataset.deleteRepeat){const name=b.dataset.deleteRepeat,count=s.entries.filter(x=>x.kind==='planned'&&x.note==='반복 일정: '+name).length;if(!confirm('반복 일정 "'+name+'"의 계획 '+count+'개를 모두 삭제할까요?'))return;s.entries=s.entries.filter(x=>!(x.kind==='planned'&&x.note==='반복 일정: '+name));save();render();alert('반복 일정 묶음을 삭제했어요.')}
  if(b.dataset.deleteTemplate){templates=templates.filter(x=>x.id!==b.dataset.deleteTemplate);saveTemplates();renderTemplates()}
+ if(b.id==='copyDayEntries'){const date=$('day').value||today();copiedDayEntries=s.entries.filter(x=>x.date===date).map(({name,start,end,kind,cat,note})=>({name,start,end,kind,cat,note}));$('copyDayStatus').textContent=copiedDayEntries.length?date+' 기록 '+copiedDayEntries.length+'개를 복사했어요.':'선택 날짜에 복사할 기록이 없습니다.';return}
+ if(b.id==='pasteDayEntries'){if(!copiedDayEntries.length){alert('먼저 복사할 날짜에서 기록 복사를 눌러 주세요.');return}const date=$('day').value||today(),newEntries=copiedDayEntries.map((x,i)=>({...x,id:'copy-'+Date.now()+'-'+i,date}));const invalid=newEntries.some(x=>min(x.end)<=min(x.start));if(invalid){alert('복사한 기록에 올바르지 않은 시간이 포함되어 있어 붙여넣을 수 없습니다.');return}const conflict=newEntries.some((x,i)=>s.entries.some(y=>y.date===date&&y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start))||newEntries.slice(0,i).some(y=>y.kind===x.kind&&min(x.start)<min(y.end)&&min(x.end)>min(y.start)));if(conflict){alert('선택 날짜의 기존 기록 또는 복사할 기록끼리 시간이 겹칩니다. 중복을 해결한 뒤 다시 시도해 주세요.');return}if(!confirm(copiedDayEntries.length+'개 기록을 '+date+'에 붙여넣을까요?'))return;s.entries.push(...newEntries);save();render();$('copyDayStatus').textContent='마지막 복사: '+copiedDayEntries.length+'개 기록';alert(newEntries.length+'개 기록을 붙여넣었어요.')}
  if(b.id==='bulkUpdateEntries'){
  const visible=[...document.querySelectorAll('[data-entry-check]')].map(x=>x.dataset.entryCheck),chosen=visible.filter(id=>selectedEntryIds.has(id));if(!chosen.length){alert('수정할 기록을 선택해 주세요.');return}
  const kind=$('bulkKind').value,cat=$('bulkCat').value.trim(),changeCat=cat.length>0;if(!kind&&!changeCat){alert('변경할 기록 종류 또는 분류를 선택·입력해 주세요.');return}
