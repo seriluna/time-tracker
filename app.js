@@ -5,8 +5,20 @@ try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entr
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
 let templates;try{templates=JSON.parse(localStorage.getItem(TEMPLATE_KEY))||[]}catch{templates=[]}if(!Array.isArray(templates))templates=[];const saveTemplates=()=>localStorage.setItem(TEMPLATE_KEY,JSON.stringify(templates));
 const AUTO_BACKUP_KEY='time-tracker-auto-backup-v1',AUTO_BACKUP_TIME_KEY='time-tracker-auto-backup-time';
-const save=()=>{const raw=JSON.stringify(s);localStorage.setItem(KEY,raw);localStorage.setItem(AUTO_BACKUP_KEY,raw);localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString());updateAutoBackupStatus()};
+let lastSaveError='';
+const save=()=>{try{const raw=JSON.stringify(s);localStorage.setItem(KEY,raw);localStorage.setItem(AUTO_BACKUP_KEY,raw);localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString());lastSaveError='';updateAutoBackupStatus();runStorageHealthCheck();runStorageHealthCheck();return true}catch(err){lastSaveError=String(err&&err.message||err);updateAutoBackupStatus();runStorageHealthCheck();alert('저장에 실패했습니다. 기기 저장 공간을 확인하고 JSON 백업 파일을 내려받아 주세요.');return false}};
 if(!localStorage.getItem(AUTO_BACKUP_KEY)&&localStorage.getItem(KEY)){localStorage.setItem(AUTO_BACKUP_KEY,localStorage.getItem(KEY));localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString())}
+function runStorageHealthCheck(){
+ const problems=[],mainRaw=localStorage.getItem(KEY),backupRaw=localStorage.getItem(AUTO_BACKUP_KEY),stamp=localStorage.getItem(AUTO_BACKUP_TIME_KEY);
+ if(lastSaveError)problems.push('최근 저장 오류: '+lastSaveError);
+ try{if(mainRaw){const d=JSON.parse(mainRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('현재 저장 데이터 형식이 올바르지 않습니다.')}else problems.push('현재 저장 데이터가 없습니다.')}}catch{problems.push('현재 저장 데이터가 손상된 JSON입니다.')}
+ try{if(backupRaw){const d=JSON.parse(backupRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('자동 백업 데이터 형식이 올바르지 않습니다.')}else problems.push('자동 백업이 없습니다.')}catch{problems.push('자동 백업 데이터가 손상된 JSON입니다.')}
+ if(backupRaw&&stamp){const age=Date.now()-new Date(stamp).getTime();if(!Number.isFinite(age)||age<0)problems.push('자동 백업 시간 정보를 확인할 수 없습니다.');else if(age>7*86400000)problems.push('마지막 자동 백업이 7일 이상 지났습니다.')}
+ let quota='';try{const bytes=new Blob([mainRaw||'',backupRaw||'']).size;quota='저장 데이터 크기 '+(bytes/1024).toFixed(1)+' KB'}catch{}
+ $('storageHealthStatus').textContent=problems.length?'주의: '+problems.join(' · ')+' · '+quota:'정상: 현재 데이터와 자동 백업을 읽을 수 있습니다. · '+quota;
+ $('storageHealthStatus').className=problems.length?'health-warning':'health-ok';
+ return {ok:problems.length===0,problems};
+}
 const updateAutoBackupStatus=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY),stamp=localStorage.getItem(AUTO_BACKUP_TIME_KEY);$('autoBackupStatus').textContent=raw?'최근 자동 저장: '+(stamp?new Date(stamp).toLocaleString():'시간 정보 없음')+' · 별도 파일 백업도 권장합니다.':'자동 백업이 아직 없습니다.'};
 const downloadBackup=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY);if(!raw){alert('다운로드할 자동 백업이 없습니다. 먼저 기록을 저장해 주세요.');return}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.href=u;a.download='time-tracker-auto-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 
@@ -144,6 +156,7 @@ $('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);$('today').onclic
 let pendingImport=null;
 const validDate=v=>typeof v==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&!Number.isNaN(new Date(v+'T12:00:00').getTime())&&dateStr(new Date(v+'T12:00:00'))===v;
 const validTime=v=>typeof v==='string'&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(v);
+$('checkStorageHealth').onclick=runStorageHealthCheck;
 $('downloadBackupNow').onclick=downloadBackup;
 $('restorePreviousBackup').onclick=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY);if(!raw){alert('이전 자동 저장본이 없습니다.');return}try{const data=JSON.parse(raw);if(!data||!Array.isArray(data.entries)||!Array.isArray(data.todos))throw Error('invalid');if(!confirm('현재 기록을 마지막 자동 저장본으로 복구할까요? 자동 저장 이후 변경 사항은 사라질 수 있습니다.'))return;s={entries:data.entries,todos:data.todos};localStorage.setItem(KEY,raw);resetEntryForm();render();updateAutoBackupStatus();alert('이전 자동 저장본을 복구했습니다.')}catch{alert('자동 저장본을 읽을 수 없습니다. 현재 데이터는 변경하지 않았습니다.')}};
 $('importBtn').onclick=()=> $('importFile').click();
