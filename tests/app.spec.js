@@ -100,3 +100,17 @@ test('작은 모바일 화면에서 가로 넘침이 없음', async ({ page }) =
   }));
   expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
 });
+
+test('타임라인의 기록을 눌러 수정 폼으로 이동', async ({ page }) => {
+  await page.locator('#name').fill('타임라인 수정 테스트');
+  await page.locator('#start').fill('14:00');
+  await page.locator('#end').fill('15:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-timeline-entry]').filter({ hasText: '타임라인 수정 테스트' }).click();
+  await expect(page.locator('#name')).toHaveValue('타임라인 수정 테스트');
+  await expect(page.locator('#saveEntry')).toHaveText('수정 저장');
+  await page.locator('#name').fill('수정 완료');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('수정 완료');
+  await expect(page.locator('#entries')).not.toContainText('타임라인 수정 테스트');
+});
