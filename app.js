@@ -1,8 +1,9 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal';
+const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates';
 let editId=null,s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entries:[],todos:[]}}
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
+let templates;try{templates=JSON.parse(localStorage.getItem(TEMPLATE_KEY))||[]}catch{templates=[]}if(!Array.isArray(templates))templates=[];const saveTemplates=()=>localStorage.setItem(TEMPLATE_KEY,JSON.stringify(templates));
 const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
 const dateStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>dateStr(new Date());
@@ -11,6 +12,9 @@ const min=t=>{let [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m};
 const dur=e=>Math.max(0,min(e.end)-min(e.start));
 const fmt=n=>Math.floor(n/60)?Math.floor(n/60)+'시간 '+n%60+'분':n+'분';
 const esc=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderTemplates(){
+ $('templates').innerHTML=templates.length?templates.map(t=>'<div class="template-item"><button type="button" class="template-use" data-use-template="'+esc(t.id)+'"><b>'+esc(t.name)+'</b><small>'+esc(t.activity)+' · '+t.start+'–'+t.end+' · '+(t.kind==='planned'?'计划':'实际')+'</small></button><button type="button" class="delete" data-delete-template="'+esc(t.id)+'" aria-label="删除模板">×</button></div>').join(''):'<p class="muted">保存常用活动后，可一键填入记录。</p>';
+}
 function renderCalendar(){
  const selected=$('day').value||today(),parts=selected.split('-').map(Number),year=parts[0],month=parts[1]-1;
  const first=new Date(year,month,1,12),offset=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),cells=[];
@@ -45,9 +49,10 @@ function render(){
  $('monthStats').innerHTML='<div class="periodtotal">월간 실제 기록 <b>'+fmt(monthTotal)+'</b></div><div class="periodrow"><span>실제 기록한 날짜</span><b>'+days+'일</b></div><div class="periodrow"><span>기록일 평균</span><b>'+fmt(days?Math.round(monthTotal/days):0)+'</b></div>';
  const mg=monthGoal*60,mp=mg?Math.min(100,Math.round(monthTotal/mg*100)):0;$('monthGoalProgress').style.width=mp+'%';$('monthGoalMessage').textContent=monthTotal>=mg?'월간 목표 달성! '+fmt(monthTotal):'월간 목표의 '+mp+'% · '+fmt(Math.max(0,mg-monthTotal))+' 남음';
 
- renderCalendar();
+ renderCalendar();renderTemplates();
 }
 function resetEntryForm(){editId=null;$('entryForm').reset();$('start').value='09:00';$('end').value='10:00';$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
+$('templateForm').onsubmit=e=>{e.preventDefault();const name=$('templateName').value.trim(),activity=$('templateActivity').value.trim(),start=$('templateStart').value,end=$('templateEnd').value;if(!name||!activity||!start||!end||min(end)<=min(start)){alert('템플릿 이름, 활동명과 올바른 시간을 입력해 주세요.');return}templates.push({id:Date.now().toString(),name,activity,start,end,kind:$('templateKind').value,cat:$('templateCat').value.trim()});saveTemplates();$('templateForm').reset();$('templateStart').value='07:00';$('templateEnd').value='08:00';renderTemplates()};
 $('entryForm').onsubmit=e=>{
  e.preventDefault();const start=$('start').value,end=$('end').value;
  if(!start||!end||min(end)<=min(start)){alert('종료 시간은 시작 시간보다 늦어야 합니다.');return}
@@ -61,6 +66,8 @@ $('entryForm').onsubmit=e=>{
 $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.useTemplate){const t=templates.find(x=>x.id===b.dataset.useTemplate);if(t){resetEntryForm();$('name').value=t.activity;$('start').value=t.start;$('end').value=t.end;$('kind').value=t.kind;$('cat').value=t.cat||'';$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
+ if(b.dataset.deleteTemplate){templates=templates.filter(x=>x.id!==b.dataset.deleteTemplate);saveTemplates();renderTemplates()}
  if(b.dataset.edit){const x=s.entries.find(x=>x.id===b.dataset.edit);if(x){editId=x.id;$('day').value=x.date;$('name').value=x.name;$('start').value=x.start;$('end').value=x.end;$('kind').value=x.kind;$('cat').value=x.cat||'';$('note').value=x.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
  if(b.dataset.del){if(editId===b.dataset.del)resetEntryForm();s.entries=s.entries.filter(x=>x.id!==b.dataset.del);save();render()}
  if(b.dataset.todoDel){s.todos=s.todos.filter(x=>x.id!==b.dataset.todoDel);save();render()}
