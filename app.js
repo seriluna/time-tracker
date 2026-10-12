@@ -12,15 +12,20 @@ if(!localStorage.getItem(AUTO_BACKUP_KEY)&&localStorage.getItem(KEY)){localStora
 function runStorageHealthCheck(){
  const problems=[],mainRaw=localStorage.getItem(KEY),backupRaw=localStorage.getItem(AUTO_BACKUP_KEY),stamp=localStorage.getItem(AUTO_BACKUP_TIME_KEY);
  if(lastSaveError)problems.push('최근 저장 오류: '+lastSaveError);
- try{if(mainRaw){const d=JSON.parse(mainRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('현재 저장 데이터 형식이 올바르지 않습니다.')}else problems.push('현재 저장 데이터가 없습니다.')}}catch{problems.push('현재 저장 데이터가 손상된 JSON입니다.')}
- try{if(backupRaw){const d=JSON.parse(backupRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('자동 백업 데이터 형식이 올바르지 않습니다.')}else problems.push('자동 백업이 없습니다.')}catch{problems.push('자동 백업 데이터가 손상된 JSON입니다.')}
+ try{
+  if(mainRaw){const d=JSON.parse(mainRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('현재 저장 데이터 형식이 올바르지 않습니다.')}
+  else problems.push('현재 저장 데이터가 없습니다.');
+ }catch{problems.push('현재 저장 데이터가 손상된 JSON입니다.')}
+ try{
+  if(backupRaw){const d=JSON.parse(backupRaw);if(!d||!Array.isArray(d.entries)||!Array.isArray(d.todos))problems.push('자동 백업 데이터 형식이 올바르지 않습니다.')}
+  else problems.push('자동 백업이 없습니다.');
+ }catch{problems.push('자동 백업 데이터가 손상된 JSON입니다.')}
  if(backupRaw&&stamp){const age=Date.now()-new Date(stamp).getTime();if(!Number.isFinite(age)||age<0)problems.push('자동 백업 시간 정보를 확인할 수 없습니다.');else if(age>7*86400000)problems.push('마지막 자동 백업이 7일 이상 지났습니다.')}
  let quota='';try{const bytes=new Blob([mainRaw||'',backupRaw||'']).size;quota='저장 데이터 크기 '+(bytes/1024).toFixed(1)+' KB'}catch{}
  $('storageHealthStatus').textContent=problems.length?'주의: '+problems.join(' · ')+' · '+quota:'정상: 현재 데이터와 자동 백업을 읽을 수 있습니다. · '+quota;
  $('storageHealthStatus').className=problems.length?'health-warning':'health-ok';
  return {ok:problems.length===0,problems};
 }
-function updateUndoStatus(){let available=false;try{const x=JSON.parse(localStorage.getItem(UNDO_KEY));available=!!x&&Array.isArray(x.entries)&&Array.isArray(x.todos)}catch{}$('undoLastChange').disabled=!available;$('undoStatus').textContent=available?'최근 변경 사항을 1회 실행 취소할 수 있습니다.':'되돌릴 수 있는 변경 사항이 없습니다.';}
 const updateAutoBackupStatus=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY),stamp=localStorage.getItem(AUTO_BACKUP_TIME_KEY);$('autoBackupStatus').textContent=raw?'최근 자동 저장: '+(stamp?new Date(stamp).toLocaleString():'시간 정보 없음')+' · 별도 파일 백업도 권장합니다.':'자동 백업이 아직 없습니다.'};
 const downloadBackup=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY);if(!raw){alert('다운로드할 자동 백업이 없습니다. 먼저 기록을 저장해 주세요.');return}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.href=u;a.download='time-tracker-auto-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 
