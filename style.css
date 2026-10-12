@@ -15,3 +15,11 @@ body{max-width:900px;padding:14px 12px 40px}
 #recordPanel{padding:12px;margin:10px 0}.panel h2{font-size:16px}.summary{gap:6px}.summary div{padding:10px 7px}.summary strong{font-size:13px}.form{padding:12px;background:#f8f9fc;border-radius:13px}.form label{font-size:12px}.form input,.form select{padding:12px;font-size:16px}.form-actions button{min-height:44px}.entries{gap:7px}.entry{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:7px;padding:10px}.entrymain{grid-column:2;grid-row:1}.entry .duration{grid-column:3;grid-row:1;font-size:11px}.entry>button{grid-row:2}.entry>button[data-edit]{grid-column:2}.entry>button[data-del]{grid-column:3}.entry-select{grid-column:1;grid-row:1}.entrymain b{font-size:13px}.entry .meta{line-height:1.4;overflow-wrap:anywhere}
 @media(min-width:650px){body{padding:24px 22px 50px}.day-timeline{padding:18px 20px}.timeline-hour{grid-template-columns:55px minmax(0,1fr) 38px;min-height:58px}.timeline-item{font-size:12px}.tools-content{width:380px}}
 @media(max-width:380px){body{padding:10px 8px 32px}.brand h1{font-size:22px}.header-subtitle{max-width:210px}.datebar{grid-template-columns:36px minmax(0,1fr) 36px 52px;gap:5px}.datebar input{font-size:14px}.timeline-hour{grid-template-columns:36px minmax(0,1fr) 29px;gap:5px}.timeline-label{font-size:10px}.timeline-add{width:28px;height:28px}.timeline-item{padding:6px;font-size:10px}}
+
+
+/* Inline quick-entry form inside each hour row */
+.timeline-quick-form{display:grid;gap:6px;padding:8px;margin-bottom:5px;background:#fff;border:1px solid #cdd3f2;border-radius:10px;box-shadow:0 2px 8px #2025380c}
+.timeline-quick-form input{width:100%;min-width:0;padding:8px;font-size:13px;border-radius:8px}
+.timeline-quick-times{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.timeline-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.timeline-quick-actions button{padding:8px;font-size:12px}
