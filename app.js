@@ -11,6 +11,18 @@ const min=t=>{let [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m};
 const dur=e=>Math.max(0,min(e.end)-min(e.start));
 const fmt=n=>Math.floor(n/60)?Math.floor(n/60)+'시간 '+n%60+'분':n+'분';
 const esc=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderCalendar(){
+ const selected=$('day').value||today(),parts=selected.split('-').map(Number),year=parts[0],month=parts[1]-1;
+ const first=new Date(year,month,1,12),offset=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),cells=[];
+ $('calTitle').textContent=year+'년 '+(month+1)+'월';
+ for(let n=0;n<offset;n++)cells.push('<span class="calendar-empty"></span>');
+ for(let day=1;day<=daysInMonth;day++){
+  const ds=dateStr(new Date(year,month,day,12)),entries=s.entries.filter(x=>x.date===ds),actual=entries.filter(x=>x.kind==='actual').reduce((sum,x)=>sum+dur(x),0),achieved=actual>=goal*60,classes=['calendar-day'];
+  if(ds===selected)classes.push('selected');if(achieved)classes.push('achieved');else if(entries.length)classes.push('recorded');
+  cells.push('<button type="button" class="'+classes.join(' ')+'" data-date="'+ds+'"><span>'+day+'</span><small>'+(entries.length?Math.round(actual/60*10)/10+'h':'')+'</small></button>');
+ }
+ $('calendar').innerHTML=cells.join('');
+}
 function render(){
  const date=$('day').value,es=s.entries.filter(e=>e.date===date).sort((a,b)=>a.start.localeCompare(b.start));
  const p=es.filter(e=>e.kind==='planned').reduce((n,e)=>n+dur(e),0),a=es.filter(e=>e.kind==='actual').reduce((n,e)=>n+dur(e),0);
@@ -33,6 +45,7 @@ function render(){
  $('monthStats').innerHTML='<div class="periodtotal">월간 실제 기록 <b>'+fmt(monthTotal)+'</b></div><div class="periodrow"><span>실제 기록한 날짜</span><b>'+days+'일</b></div><div class="periodrow"><span>기록일 평균</span><b>'+fmt(days?Math.round(monthTotal/days):0)+'</b></div>';
  const mg=monthGoal*60,mp=mg?Math.min(100,Math.round(monthTotal/mg*100)):0;$('monthGoalProgress').style.width=mp+'%';$('monthGoalMessage').textContent=monthTotal>=mg?'월간 목표 달성! '+fmt(monthTotal):'월간 목표의 '+mp+'% · '+fmt(Math.max(0,mg-monthTotal))+' 남음';
 
+ renderCalendar();
 }
 function resetEntryForm(){editId=null;$('entryForm').reset();$('start').value='09:00';$('end').value='10:00';$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
 $('entryForm').onsubmit=e=>{
@@ -51,6 +64,8 @@ document.addEventListener('click',e=>{
  if(b.dataset.edit){const x=s.entries.find(x=>x.id===b.dataset.edit);if(x){editId=x.id;$('day').value=x.date;$('name').value=x.name;$('start').value=x.start;$('end').value=x.end;$('kind').value=x.kind;$('cat').value=x.cat||'';$('note').value=x.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'start'})}}
  if(b.dataset.del){if(editId===b.dataset.del)resetEntryForm();s.entries=s.entries.filter(x=>x.id!==b.dataset.del);save();render()}
  if(b.dataset.todoDel){s.todos=s.todos.filter(x=>x.id!==b.dataset.todoDel);save();render()}
+ if(b.dataset.date){$('day').value=b.dataset.date;render();document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab==='record'));['record','todo','stats'].forEach(k=>$(k+'Panel').classList.toggle('hidden',k!=='record'));$('recordPanel').scrollIntoView({behavior:'smooth',block:'start'})}
+ if(b.id==='calPrev'||b.id==='calNext'){const parts=($('day').value||today()).split('-').map(Number),delta=b.id==='calNext'?1:-1,d=new Date(parts[0],parts[1]-1+delta,1,12);$('day').value=dateStr(d);render()}
  if(b.dataset.tab){document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['record','todo','stats'].forEach(k=>$(k+'Panel').classList.toggle('hidden',k!==b.dataset.tab))}
 });
 document.addEventListener('change',e=>{if(e.target.dataset.check){const t=s.todos.find(x=>x.id===e.target.dataset.check);if(t)t.done=e.target.checked;save();render()}if(e.target.id==='day')render()});
