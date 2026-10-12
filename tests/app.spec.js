@@ -1,16 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
 test.beforeEach(async ({ page }) => {
+  // Playwright creates a fresh browser context for each test, so storage starts empty.
   await page.goto('/');
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.reload();
 });
 
 test('기록 추가와 시간 합계 계산', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: '시간 기록' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '시간 기록', exact: true })).toBeVisible();
   await page.locator('#name').fill('자동 테스트 운동');
   await page.locator('#start').fill('09:00');
   await page.locator('#end').fill('10:00');
