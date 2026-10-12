@@ -114,3 +114,13 @@ test('타임라인의 기록을 눌러 수정 폼으로 이동', async ({ page }
   await expect(page.locator('#entries')).toContainText('수정 완료');
   await expect(page.locator('#entries')).not.toContainText('타임라인 수정 테스트');
 });
+
+test('시간 칸에서 인라인으로 기록 추가', async ({ page }) => {
+  await page.locator('[data-add-hour="14"]').click();
+  const form=page.locator('.timeline-quick-form');
+  await expect(form).toBeVisible();
+  await form.locator('.timeline-quick-name').fill('인라인 빠른 기록');
+  await form.getByRole('button', { name: '저장' }).click();
+  await expect(page.locator('#entries')).toContainText('인라인 빠른 기록');
+  await expect(page.locator('[data-timeline-entry]').filter({hasText:'인라인 빠른 기록'})).toBeVisible();
+});
