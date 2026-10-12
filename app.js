@@ -1,12 +1,12 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal';
-let editId=null,s,goal=Number(localStorage.getItem(GOAL_KEY))||8;
+const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal';
+let editId=null,s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entries:[],todos:[]}}
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
 const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
 const dateStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>dateStr(new Date());
-$('day').value=today();$('goalHours').value=goal;
+$('day').value=today();$('goalHours').value=goal;$('weekGoal').value=weekGoal;$('monthGoal').value=monthGoal;
 const min=t=>{let [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m};
 const dur=e=>Math.max(0,min(e.end)-min(e.start));
 const fmt=n=>Math.floor(n/60)?Math.floor(n/60)+'시간 '+n%60+'분':n+'분';
@@ -27,8 +27,12 @@ function render(){
  let weekRows=[],weekTotal=0,weekPlanned=0;
  for(let n=0;n<7;n++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+n);const ds=dateStr(d),dayEntries=s.entries.filter(x=>x.date===ds),v=dayEntries.filter(x=>x.kind==='actual').reduce((sum,x)=>sum+dur(x),0),pv=dayEntries.filter(x=>x.kind==='planned').reduce((sum,x)=>sum+dur(x),0);weekTotal+=v;weekPlanned+=pv;weekRows.push('<div class="periodrow"><span>'+ds.slice(5)+'</span><span>계획 '+fmt(pv)+' · 실제 '+fmt(v)+' · '+(pv?Math.round(v/pv*100)+'%':'—')+'</span></div>')}
  $('weekStats').innerHTML='<div class="periodtotal">주간 계획 '+fmt(weekPlanned)+' · 실제 '+fmt(weekTotal)+' · '+(weekPlanned?Math.round(weekTotal/weekPlanned*100)+'%':'계획 없음')+'</div>'+weekRows.join('');
+ const wg=weekGoal*60,wp=wg?Math.min(100,Math.round(weekTotal/wg*100)):0;$('weekGoalProgress').style.width=wp+'%';$('weekGoalMessage').textContent=weekTotal>=wg?'주간 목표 달성! '+fmt(weekTotal):'주간 목표의 '+wp+'% · '+fmt(Math.max(0,wg-weekTotal))+' 남음';
+
  const month=date.slice(0,7),me=s.entries.filter(x=>x.date.startsWith(month)&&x.kind==='actual'),monthTotal=me.reduce((sum,x)=>sum+dur(x),0),days=new Set(me.map(x=>x.date)).size;
  $('monthStats').innerHTML='<div class="periodtotal">월간 실제 기록 <b>'+fmt(monthTotal)+'</b></div><div class="periodrow"><span>실제 기록한 날짜</span><b>'+days+'일</b></div><div class="periodrow"><span>기록일 평균</span><b>'+fmt(days?Math.round(monthTotal/days):0)+'</b></div>';
+ const mg=monthGoal*60,mp=mg?Math.min(100,Math.round(monthTotal/mg*100)):0;$('monthGoalProgress').style.width=mp+'%';$('monthGoalMessage').textContent=monthTotal>=mg?'월간 목표 달성! '+fmt(monthTotal):'월간 목표의 '+mp+'% · '+fmt(Math.max(0,mg-monthTotal))+' 남음';
+
 }
 function resetEntryForm(){editId=null;$('entryForm').reset();$('start').value='09:00';$('end').value='10:00';$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
 $('entryForm').onsubmit=e=>{
@@ -51,7 +55,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{if(e.target.dataset.check){const t=s.todos.find(x=>x.id===e.target.dataset.check);if(t)t.done=e.target.checked;save();render()}if(e.target.id==='day')render()});
 $('cancelEdit').onclick=resetEntryForm;
-$('goalHours').onchange=()=>{const v=Number($('goalHours').value);if(!Number.isFinite(v)||v<0.5||v>24){alert('목표는 0.5~24시간으로 설정해 주세요.');$('goalHours').value=goal;return}goal=v;localStorage.setItem(GOAL_KEY,String(goal));render()};
+$('weekGoal').onchange=()=>{const v=Number($('weekGoal').value);if(!Number.isFinite(v)||v<1||v>168){alert('주간 목표는 1~168시간으로 설정해 주세요.');$('weekGoal').value=weekGoal;return}weekGoal=v;localStorage.setItem(WEEK_GOAL_KEY,String(v));render()};$('monthGoal').onchange=()=>{const v=Number($('monthGoal').value);if(!Number.isFinite(v)||v<1||v>744){alert('월간 목표는 1~744시간으로 설정해 주세요.');$('monthGoal').value=monthGoal;return}monthGoal=v;localStorage.setItem(MONTH_GOAL_KEY,String(v));render()};$('goalHours').onchange=()=>{const v=Number($('goalHours').value);if(!Number.isFinite(v)||v<0.5||v>24){alert('목표는 0.5~24시간으로 설정해 주세요.');$('goalHours').value=goal;return}goal=v;localStorage.setItem(GOAL_KEY,String(goal));render()};
 function shift(n){const parts=($('day').value||today()).split('-').map(Number),d=new Date(parts[0],parts[1]-1,parts[2],12);d.setDate(d.getDate()+n);$('day').value=dateStr(d);render()}
 $('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);$('today').onclick=()=>{$('day').value=today();render()};
 $('importBtn').onclick=()=> $('importFile').click();
