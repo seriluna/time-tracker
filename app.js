@@ -136,7 +136,7 @@ document.addEventListener('click',e=>{
  const quick=e.target.closest('[data-add-hour]');
  if(quick){startQuickEntry(quick.dataset.addHour);return}
  const timelineEntry=e.target.closest('[data-timeline-entry]');
- if(timelineEntry){const item=s.entries.find(x=>x.id===timelineEntry.dataset.timelineEntry);if(item){$('day').value=item.date;const target=document.querySelector('[data-edit="'+CSS.escape(item.id)+'"]');if(target)target.click();else{const id=item.id;editId=id;$('name').value=item.name;$('start').value=item.start;$('end').value=item.end;$('kind').value=item.kind;$('cat').value=item.cat||'';$('note').value=item.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'center'})}}return}
+ if(timelineEntry){const item=s.entries.find(x=>x.id===timelineEntry.dataset.timelineEntry);if(item){$('day').value=item.date;editId=item.id;$('name').value=item.name;$('start').value=item.start;$('end').value=item.end;$('kind').value=item.kind;$('cat').value=item.cat||'';$('note').value=item.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'center'})}return}
 
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='generateRepeat'){
