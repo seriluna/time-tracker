@@ -134,7 +134,17 @@ $('entryForm').onsubmit=e=>{
 $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
  const quick=e.target.closest('[data-add-hour]');
- if(quick){startQuickEntry(quick.dataset.addHour);return}
+ if(quick){
+  const hour=quick.dataset.addHour,slot=quick.closest('.timeline-hour').querySelector('.timeline-slot');
+  document.querySelectorAll('.timeline-quick-form').forEach(x=>x.remove());
+  const form=document.createElement('form');form.className='timeline-quick-form';
+  form.innerHTML='<input class="timeline-quick-name" maxlength="80" placeholder="활동 이름" aria-label="'+hour+'시 활동 이름" required><div class="timeline-quick-times"><input class="timeline-quick-start" type="time" aria-label="시작 시간" required><input class="timeline-quick-end" type="time" aria-label="종료 시간" required></div><div class="timeline-quick-actions"><button type="submit" class="primary">저장</button><button type="button" class="timeline-quick-cancel">취소</button></div>';
+  form.querySelector('.timeline-quick-start').value=hour+':00';form.querySelector('.timeline-quick-end').value=String((Number(hour)+1)%24).padStart(2,'0')+':00';
+  slot.prepend(form);form.querySelector('.timeline-quick-name').focus({preventScroll:true});
+  form.querySelector('.timeline-quick-cancel').onclick=()=>form.remove();
+  form.onsubmit=ev=>{ev.preventDefault();const name=form.querySelector('.timeline-quick-name').value.trim(),start=form.querySelector('.timeline-quick-start').value,end=form.querySelector('.timeline-quick-end').value;if(!name)return;if(min(end)<=min(start)){alert('종료 시간은 시작 시간보다 늦어야 합니다.');return}$('day').value=$('day').value||today();resetEntryForm();$('name').value=name;$('start').value=start;$('end').value=end;$('kind').value='actual';$('cat').value='';$('note').value='';$('entryForm').requestSubmit();};
+  return;
+ }
  const timelineEntry=e.target.closest('[data-timeline-entry]');
  if(timelineEntry){const item=s.entries.find(x=>x.id===timelineEntry.dataset.timelineEntry);if(item){$('day').value=item.date;editId=item.id;$('name').value=item.name;$('start').value=item.start;$('end').value=item.end;$('kind').value=item.kind;$('cat').value=item.cat||'';$('note').value=item.note||'';$('saveEntry').textContent='수정 저장';$('cancelEdit').hidden=false;$('entryForm').scrollIntoView({behavior:'smooth',block:'center'})}return}
 
