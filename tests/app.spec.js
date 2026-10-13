@@ -346,3 +346,22 @@ test('CSV 내보내기가 기록과 함께 다운로드됨', async ({ page }) =>
   expect(csv).toContain('CSV 내보내기 테스트 기록');
   expect(csv).toContain('시간(분)');
 });
+
+test('분류는 추천 항목을 선택하거나 사용자 지정 값을 입력할 수 있음', async ({ page }) => {
+  await expect(page.locator('#cat')).toHaveAttribute('list', 'categorySuggestions');
+  await expect(page.locator('#categorySuggestions option')).toHaveCount(9);
+  await page.locator('#cat').fill('나만의 분류');
+  await page.locator('#name').fill('분류 테스트');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('나만의 분류');
+});
+
+test('새 기록 시간은 선택 날짜의 마지막 기록 종료 시각을 기준으로 설정됨', async ({ page }) => {
+  await page.locator('#name').fill('첫 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:30');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('#name').fill('두 번째 기록');
+  await expect(page.locator('#start')).toHaveValue('10:30');
+  await expect(page.locator('#end')).toHaveValue('11:30');
+});
