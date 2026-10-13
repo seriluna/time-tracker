@@ -71,17 +71,22 @@ function renderTimeline(){
  const date=$('day').value||today();
  const dayEntries=s.entries.filter(e=>e.date===date).sort((a,b)=>a.start.localeCompare(b.start));
  const actual=dayEntries.filter(e=>e.kind==='actual').reduce((n,e)=>n+dur(e),0);
- $('timelineTotal').textContent='실제 '+fmt(actual);
+ const planned=dayEntries.filter(e=>e.kind==='planned').reduce((n,e)=>n+dur(e),0);
+ $('timelineTotal').textContent='실제 '+fmt(actual)+' · 계획 '+fmt(planned);
  const rows=[];
  for(let h=0;h<24;h++){
   const hour=String(h).padStart(2,'0'),start=h*60,end=start+60;
   const hits=dayEntries.filter(e=>min(e.start)<end&&min(e.end)>start);
+  const meters=hits.map(e=>{
+   const from=Math.max(start,min(e.start)),to=Math.min(end,min(e.end));
+   return '<span class="timeline-segment '+(e.kind==='planned'?'planned':'actual')+'" data-kind="'+e.kind+'" data-start-minute="'+from+'" data-end-minute="'+to+'" style="left:'+((from-start)/60*100)+'%;width:'+((to-from)/60*100)+'%" title="'+esc(e.name)+' '+String(Math.floor(from/60)).padStart(2,'0')+':'+String(from%60).padStart(2,'0')+'–'+String(Math.floor(to/60)).padStart(2,'0')+':'+String(to%60).padStart(2,'0')+'"></span>';
+  }).join('');
   const cards=hits.map(e=>{
    const from=Math.max(start,min(e.start)),to=Math.min(end,min(e.end));
    const label=(from===min(e.start)?e.start:hour+':00')+'–'+(to===min(e.end)?e.end:String(Math.floor(to/60)).padStart(2,'0')+':'+String(to%60).padStart(2,'0'));
    return '<button type="button" class="timeline-item '+(e.kind==='planned'?'planned':'actual')+'" data-timeline-entry="'+esc(e.id)+'" aria-label="'+esc(e.name)+' '+label+' 수정"><span>'+esc(e.name)+'</span><small>'+label+'</small></button>';
   }).join('');
-  rows.push('<div class="timeline-hour" data-hour="'+hour+'"><div class="timeline-label">'+hour+':00</div><div class="timeline-slot">'+(cards||'<div class="timeline-empty">비어 있음</div>')+'</div><button type="button" class="timeline-add" data-add-hour="'+hour+'" aria-label="'+hour+'시 기록 추가">＋</button></div>');
+  rows.push('<div class="timeline-hour" data-hour="'+hour+'"><div class="timeline-label">'+hour+':00</div><div class="timeline-slot"><div class="timeline-meter" aria-label="'+hour+'시 기록 시간 표시">'+meters+'</div>'+(cards||'<div class="timeline-empty">비어 있음</div>')+'</div><button type="button" class="timeline-add" data-add-hour="'+hour+'" aria-label="'+hour+'시 기록 추가">＋</button></div>');
  }
  $('timelineGrid').innerHTML=rows.join('');
 }
