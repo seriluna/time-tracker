@@ -562,3 +562,31 @@ test('붙여넣기 대상 날짜에 같은 종류의 시간이 겹치면 기존 
   const after = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
   expect(after).toBe(before);
 });
+
+
+test('이전 날짜의 미완료 할 일은 이후 날짜에도 표시되고 완료하면 미뤄진 목록에서 사라짐', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  const day = page.locator('#day');
+  const sourceDate = await day.inputValue();
+
+  await page.locator('#todoText').fill('미완료 이월 테스트');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await expect(page.locator('#todos')).toContainText('미완료 이월 테스트');
+
+  const next = new Date(sourceDate + 'T12:00:00');
+  next.setDate(next.getDate() + 1);
+  const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
+  await day.fill(nextDate);
+
+  await expect(page.locator('#todos')).toContainText('미완료 이월 테스트');
+  await expect(page.locator('#todos')).toContainText('원래 날짜 ' + sourceDate);
+  await page.locator('#todos input[data-check]').check();
+  await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
+
+  await day.fill(sourceDate);
+  await expect(page.locator('#todos')).toContainText('미완료 이월 테스트');
+  await expect(page.locator('#todos input[data-check]')).toBeChecked();
+  await page.reload();
+  await day.fill(nextDate);
+  await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
+});
