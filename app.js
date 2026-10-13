@@ -212,8 +212,8 @@ $('weekGoal').onchange=()=>{const v=Number($('weekGoal').value);if(!Number.isFin
 function shift(n){const parts=($('day').value||today()).split('-').map(Number),d=new Date(parts[0],parts[1]-1,parts[2],12);d.setDate(d.getDate()+n);$('day').value=dateStr(d);render()}
 $('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);$('today').onclick=()=>{$('day').value=today();render()};
 let pendingImport=null;
-const validDate=v=>typeof v==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&!Number.isNaN(new Date(v+'T12:00:00').getTime())&&dateStr(new Date(v+'T12:00:00'))===v;
-const validTime=v=>typeof v==='string'&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(v);
+const validDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(new Date(v+'T12:00:00').getTime())&&dateStr(new Date(v+'T12:00:00'))===v;
+const validTime=v=>typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 $('undoLastChange').onclick=()=>{const raw=localStorage.getItem(UNDO_KEY);if(!raw){updateUndoStatus();return}try{const data=JSON.parse(raw);if(!data||!Array.isArray(data.entries)||!Array.isArray(data.todos))throw Error('invalid');if(!confirm('마지막 데이터 변경을 실행 취소할까요? 현재 기록과 할 일은 변경 전 상태로 돌아갑니다.'))return;s={entries:data.entries,todos:data.todos};const restoredRaw=JSON.stringify(s);localStorage.setItem(KEY,restoredRaw);lastPersistedRaw=restoredRaw;localStorage.setItem(AUTO_BACKUP_KEY,restoredRaw);localStorage.setItem(AUTO_BACKUP_TIME_KEY,new Date().toISOString());localStorage.removeItem(UNDO_KEY);selectedEntryIds.clear();resetEntryForm();render();updateAutoBackupStatus();runStorageHealthCheck();updateUndoStatus();alert('마지막 변경을 실행 취소했습니다.')}catch(err){alert('실행 취소에 실패했습니다. 저장 공간을 확인해 주세요.');updateUndoStatus()}};
 $('checkStorageHealth').onclick=runStorageHealthCheck;
 $('downloadBackupNow').onclick=downloadBackup;
