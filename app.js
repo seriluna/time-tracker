@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates',UNDO_KEY='time-tracker-undo-v1';
-let editId=null,selectedEntryIds=new Set(),copiedDayEntries=[],s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
+let editId=null,selectedEntryIds=new Set(),copiedDayEntries=[],timelineFilter='all',s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entries:[],todos:[]}}
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
 let lastPersistedRaw=JSON.stringify(s);
@@ -77,11 +77,12 @@ function renderTimeline(){
  for(let h=0;h<24;h++){
   const hour=String(h).padStart(2,'0'),start=h*60,end=start+60;
   const hits=dayEntries.filter(e=>min(e.start)<end&&min(e.end)>start);
-  const meters=hits.map(e=>{
+  const visibleHits=hits.filter(e=>timelineFilter==='all'||e.kind===timelineFilter);
+  const meters=visibleHits.map(e=>{
    const from=Math.max(start,min(e.start)),to=Math.min(end,min(e.end));
    return '<span class="timeline-segment '+(e.kind==='planned'?'planned':'actual')+'" data-kind="'+e.kind+'" data-start-minute="'+from+'" data-end-minute="'+to+'" style="left:'+((from-start)/60*100)+'%;width:'+((to-from)/60*100)+'%" title="'+esc(e.name)+' '+String(Math.floor(from/60)).padStart(2,'0')+':'+String(from%60).padStart(2,'0')+'–'+String(Math.floor(to/60)).padStart(2,'0')+':'+String(to%60).padStart(2,'0')+'"></span>';
   }).join('');
-  const cards=hits.map(e=>{
+  const cards=visibleHits.map(e=>{
    const from=Math.max(start,min(e.start)),to=Math.min(end,min(e.end));
    const label=(from===min(e.start)?e.start:hour+':00')+'–'+(to===min(e.end)?e.end:String(Math.floor(to/60)).padStart(2,'0')+':'+String(to%60).padStart(2,'0'));
    return '<button type="button" class="timeline-item '+(e.kind==='planned'?'planned':'actual')+'" data-timeline-entry="'+esc(e.id)+'" aria-label="'+esc(e.name)+' '+label+' 수정"><span>'+esc(e.name)+'</span><small>'+label+'</small></button>';
@@ -89,6 +90,7 @@ function renderTimeline(){
   rows.push('<div class="timeline-hour" data-hour="'+hour+'"><div class="timeline-label">'+hour+':00</div><div class="timeline-slot"><div class="timeline-meter" aria-label="'+hour+'시 기록 시간 표시">'+meters+'</div>'+(cards||'<div class="timeline-empty">비어 있음</div>')+'</div><button type="button" class="timeline-add" data-add-hour="'+hour+'" aria-label="'+hour+'시 기록 추가">＋</button></div>');
  }
  $('timelineGrid').innerHTML=rows.join('');
+ document.querySelectorAll('[data-timeline-filter]').forEach(button=>{const active=button.dataset.timelineFilter===timelineFilter;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
 }
 function startQuickEntry(hour){
  resetEntryForm();
