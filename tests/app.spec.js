@@ -365,3 +365,31 @@ test('새 기록 시간은 선택 날짜의 마지막 기록 종료 시각을 �
   await expect(page.locator('#start')).toHaveValue('10:30');
   await expect(page.locator('#end')).toHaveValue('11:30');
 });
+
+
+test('수정 폼에서 취소하면 기록을 삭제하지 않음', async ({ page }) => {
+  await page.locator('#name').fill('취소할 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-edit]').click();
+  await expect(page.locator('#deleteEditingEntry')).toBeVisible();
+  await page.locator('#cancelEdit').click();
+  await expect(page.locator('#entries')).toContainText('취소할 기록');
+  await expect(page.locator('#deleteEditingEntry')).toBeHidden();
+});
+
+test('수정 폼에서 삭제하면 확인 후 기록과 합계가 갱신됨', async ({ page }) => {
+  await page.locator('#name').fill('폼에서 삭제할 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-edit]').click();
+  await expect(page.locator('#deleteEditingEntry')).toBeVisible();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#deleteEditingEntry').click();
+
+  await expect(page.locator('#entries')).not.toContainText('폼에서 삭제할 기록');
+  await expect(page.locator('#actual')).toHaveText('0분');
+  await expect(page.locator('#count')).toHaveText('0');
+  await expect(page.locator('#deleteEditingEntry')).toBeHidden();
+});
