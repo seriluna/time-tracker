@@ -580,7 +580,7 @@ test('이전 날짜의 미완료 할 일은 이후 날짜에도 표시되고 완
 
   await expect(page.locator('#todos')).toContainText('미완료 이월 테스트');
   await expect(page.locator('#todos')).toContainText('원래 날짜 ' + sourceDate);
-  await page.locator('#todos input[data-check]').check();
+  await page.locator('#todos input[data-check]').click();
   await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
 
   await day.fill(sourceDate);
