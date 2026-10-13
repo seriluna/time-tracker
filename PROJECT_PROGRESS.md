@@ -23,7 +23,6 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 
 1. [TODO] Step 2 follow-up: inspect default-time behavior for edge cases (selected date changes, planned vs actual entries, latest end near 23:59, and entries that overlap). Add tests/fix only if behavior is incorrect.
 2. [IN_PROGRESS] Step 3: add delete action to edit form; test cancel and confirmed deletion independently. Current PR: https://github.com/seriluna/time-tracker/pull/10 (update after PR creation).
-3. [TODO] Step 4: timeline minute totals and continuous time-fill visualization.
 4. [TODO] Step 5: plan-only / actual-only / split-view controls and mobile clipping.
 5. [TODO] Step 6: date copy/paste reliability.
 6. [TODO] Step 7: Todo date defaults, completed checkbox, and incomplete old-todo placement.
