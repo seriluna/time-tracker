@@ -590,3 +590,22 @@ test('이전 날짜의 미완료 할 일은 이후 날짜에도 표시되고 완
   await day.fill(nextDate);
   await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
 });
+
+test('할 일 분류를 저장하고 마지막 분류를 다음 입력에도 기억함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  const sourceDate = await page.locator('#day').inputValue();
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoText').fill('개인 할 일 분류 테스트');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await expect(page.locator('#todos')).toContainText('개인 할 일 분류 테스트');
+  await expect(page.locator('#todos')).toContainText('개인');
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(todo => todo.text === '개인 할 일 분류 테스트')).toMatchObject({ date: sourceDate, category: 'personal', done: false });
+
+  await page.reload();
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await page.locator('#todoText').fill('기억한 분류 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(todo => todo.text === '기억한 분류 할 일').category).toBe('personal');
+});
