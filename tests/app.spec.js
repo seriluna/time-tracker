@@ -367,6 +367,46 @@ test('새 기록 시간은 선택 날짜의 마지막 기록 종료 시각을 �
 });
 
 
+test('새 기록 기본 시간은 같은 종류의 늦은 기록과 겹치지 않음', async ({ page }) => {
+  await page.locator('#name').fill('늦은 기록');
+  await page.locator('#start').fill('23:00');
+  await page.locator('#end').fill('23:59');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('다음 기록');
+  await expect(page.locator('#start')).toHaveValue('09:00');
+  await expect(page.locator('#end')).toHaveValue('10:00');
+});
+
+test('날짜를 바꾸면 해당 날짜 기록을 기준으로 새 기록 시간이 다시 설정됨', async ({ page }) => {
+  const day = page.locator('#day');
+  const selected = await day.inputValue();
+  await page.locator('#name').fill('오늘 기록');
+  await page.locator('#start').fill('13:00');
+  await page.locator('#end').fill('14:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  const nextDate = new Date(selected + 'T12:00:00');
+  nextDate.setDate(nextDate.getDate() - 1);
+  const prior = [nextDate.getFullYear(), String(nextDate.getMonth() + 1).padStart(2, '0'), String(nextDate.getDate()).padStart(2, '0')].join('-');
+  await day.fill(prior);
+  await expect(page.locator('#start')).toHaveValue('09:00');
+  await expect(page.locator('#end')).toHaveValue('10:00');
+});
+
+test('실제 기록의 기본 시간은 계획 기록과 겹쳐도 허용되는 종류별 규칙을 따름', async ({ page }) => {
+  await page.locator('#name').fill('계획 기록');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('실제 기록');
+  await page.locator('#kind').selectOption('actual');
+  await expect(page.locator('#start')).toHaveValue('09:00');
+  await expect(page.locator('#end')).toHaveValue('10:00');
+});
+
 test('수정 폼에서 취소하면 기록을 삭제하지 않음', async ({ page }) => {
   await page.locator('#name').fill('취소할 기록');
   await page.locator('#entryForm button[type="submit"]').click();
