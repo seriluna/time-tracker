@@ -417,3 +417,31 @@ test('24시간 타임라인은 분 단위 실제/계획 구간과 합계를 표�
   await expect(actual).toHaveCSS('background-color', 'rgb(80, 89, 168)');
   await expect(planned).toHaveCSS('background-color', 'rgb(197, 139, 49)');
 });
+
+
+test('타임라인 필터는 실제/계획 구간을 구분하고 전체 합계는 유지', async ({ page }) => {
+  await page.locator('#name').fill('필터 실제 기록');
+  await page.locator('#start').fill('09:10');
+  await page.locator('#end').fill('09:30');
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('필터 계획 기록');
+  await page.locator('#start').fill('09:40');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('[data-timeline-filter="actual"]').click();
+  await expect(page.locator('[data-timeline-entry]')).toHaveCount(1);
+  await expect(page.locator('[data-timeline-entry]')).toContainText('필터 실제 기록');
+  await expect(page.locator('[data-timeline-filter="actual"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#timelineTotal')).toHaveText('실제 20분 · 계획 20분');
+
+  await page.locator('[data-timeline-filter="planned"]').click();
+  await expect(page.locator('[data-timeline-entry]')).toHaveCount(1);
+  await expect(page.locator('[data-timeline-entry]')).toContainText('필터 계획 기록');
+
+  await page.locator('[data-timeline-filter="all"]').click();
+  await expect(page.locator('[data-timeline-entry]')).toHaveCount(2);
+});
