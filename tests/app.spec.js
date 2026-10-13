@@ -393,3 +393,27 @@ test('수정 폼에서 삭제하면 확인 후 기록과 합계가 갱신됨', a
   await expect(page.locator('#count')).toHaveText('0');
   await expect(page.locator('#deleteEditingEntry')).toBeHidden();
 });
+
+
+test('24시간 타임라인은 분 단위 실제/계획 구간과 합계를 표시', async ({ page }) => {
+  await page.locator('#name').fill('실제 25분');
+  await page.locator('#start').fill('09:15');
+  await page.locator('#end').fill('09:40');
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('계획 30분');
+  await page.locator('#start').fill('09:45');
+  await page.locator('#end').fill('10:15');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect(page.locator('#timelineTotal')).toHaveText('실제 25분 · 계획 30분');
+  const actual = page.locator('.timeline-segment[data-kind="actual"][data-start-minute="555"][data-end-minute="580"]');
+  const planned = page.locator('.timeline-segment[data-kind="planned"][data-start-minute="585"][data-end-minute="600"]');
+  await expect(actual).toHaveCount(1);
+  await expect(planned).toHaveCount(1);
+  await expect(page.locator('.timeline-segment[data-kind="planned"][data-start-minute="600"][data-end-minute="615"]')).toHaveCount(1);
+  await expect(actual).toHaveCSS('background-color', 'rgb(80, 89, 168)');
+  await expect(planned).toHaveCSS('background-color', 'rgb(197, 139, 49)');
+});
