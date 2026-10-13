@@ -125,3 +125,110 @@ test('시간 칸에서 인라인으로 기록 추가', async ({ page }) => {
   await expect(page.locator('#entries')).toContainText('인라인 빠른 기록');
   await expect(page.locator('[data-timeline-entry]').filter({hasText:'인라인 빠른 기록'})).toBeVisible();
 });
+
+test('기록 삭제 후 개수와 합계가 갱신됨', async ({ page }) => {
+  await page.locator('#name').fill('삭제할 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
+  await expect(page.locator('#count')).toHaveText('1');
+
+  await page.locator('[data-del]').click();
+
+  await expect(page.locator('#entries')).not.toContainText('삭제할 기록');
+  await expect(page.locator('#actual')).toHaveText('0분');
+  await expect(page.locator('#count')).toHaveText('0');
+});
+
+test('계획 시간과 실제 시간이 따로 합산됨', async ({ page }) => {
+  await page.locator('#name').fill('실제 업무');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('계획 업무');
+  await page.locator('#start').fill('10:00');
+  await page.locator('#end').fill('11:00');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
+  await expect(page.locator('#planned')).toHaveText('1시간 0분');
+  await expect(page.locator('#count')).toHaveText('2');
+});
+
+test('날짜를 바꾸면 선택한 날짜의 기록만 표시됨', async ({ page }) => {
+  const today = await page.locator('#day').inputValue();
+  await page.locator('#name').fill('오늘 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('오늘 기록');
+
+  const previous = await page.evaluate(value => {
+    const d = new Date(value + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }, today);
+  await page.locator('#day').fill(previous);
+  await expect(page.locator('#entries')).not.toContainText('오늘 기록');
+  await expect(page.locator('#count')).toHaveText('0');
+
+  await page.locator('#day').fill(today);
+  await expect(page.locator('#entries')).toContainText('오늘 기록');
+});
+
+test('잘못된 JSON 백업은 거부하고 기존 기록을 유지함', async ({ page }) => {
+  await page.locator('#name').fill('기존 기록 유지');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('기존 기록 유지');
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"entries":[{"broken":true}],"todos":[]}', 'utf8'),
+  });
+
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect(page.locator('#entries')).toContainText('기존 기록 유지');
+  await expect(page.locator('#count')).toHaveText('1');
+});
+
+test('유효한 JSON 백업 복원은 현재 데이터를 백업 데이터로 교체함', async ({ page }) => {
+  await page.locator('#name').fill('복원 전 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [{
+      id: 'backup-entry-1',
+      date,
+      name: '복원된 기록',
+      start: '13:00',
+      end: '14:00',
+      kind: 'actual',
+      cat: '테스트',
+      note: '',
+    }],
+    todos: [],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'valid-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+
+  await expect(page.locator('#entries')).toContainText('복원된 기록');
+  await expect(page.locator('#entries')).not.toContainText('복원 전 기록');
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
+});
+
