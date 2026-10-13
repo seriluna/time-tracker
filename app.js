@@ -141,6 +141,8 @@ $('entryForm').onsubmit=e=>{
 };
 $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
+ const filter=e.target.closest('[data-timeline-filter]');
+ if(filter){timelineFilter=filter.dataset.timelineFilter;renderTimeline();return}
  const quick=e.target.closest('[data-add-hour]');
  if(quick){
   const hour=quick.dataset.addHour,slot=quick.closest('.timeline-hour').querySelector('.timeline-slot');
