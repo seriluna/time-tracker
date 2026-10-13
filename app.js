@@ -119,7 +119,8 @@ function render(){
 
  renderCalendar();renderTemplates();renderRepeatGroups();
 }
-function resetEntryForm(){editId=null;$('entryForm').reset();$('start').value='09:00';$('end').value='10:00';$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
+function setDefaultEntryTimes(){const date=$('day').value||today(),latest=s.entries.filter(e=>e.date===date).reduce((max,e)=>Math.max(max,min(e.end)),0);let start=latest>0?latest:540;if(start>=1439)start=1380;const end=Math.min(1439,start+60);$('start').value=String(Math.floor(start/60)).padStart(2,'0')+':'+String(start%60).padStart(2,'0');$('end').value=String(Math.floor(end/60)).padStart(2,'0')+':'+String(end%60).padStart(2,'0')}
+function resetEntryForm(){editId=null;$('entryForm').reset();setDefaultEntryTimes();$('saveEntry').textContent='기록 저장';$('cancelEdit').hidden=true}
 $('templateForm').onsubmit=e=>{e.preventDefault();const name=$('templateName').value.trim(),activity=$('templateActivity').value.trim(),start=$('templateStart').value,end=$('templateEnd').value;if(!name||!activity||!start||!end||min(end)<=min(start)){alert('템플릿 이름, 활동명과 올바른 시간을 입력해 주세요.');return}templates.push({id:Date.now().toString(),name,activity,start,end,kind:$('templateKind').value,cat:$('templateCat').value.trim()});saveTemplates();$('templateForm').reset();$('templateStart').value='07:00';$('templateEnd').value='08:00';renderTemplates()};
 $('entryForm').onsubmit=e=>{
  e.preventDefault();const start=$('start').value,end=$('end').value;
