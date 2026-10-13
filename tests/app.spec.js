@@ -230,6 +230,11 @@ test('유효한 JSON 백업 복원은 현재 데이터를 백업 데이터로 �
   await expect(page.locator('#entries')).toContainText('복원된 기록');
   await expect(page.locator('#entries')).not.toContainText('복원 전 기록');
   await expect(page.locator('#actual')).toHaveText('1시간 0분');
+
+  await page.reload();
+  await expect(page.locator('#entries')).toContainText('복원된 기록');
+  await expect(page.locator('#entries')).not.toContainText('복원 전 기록');
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
 });
 
 test('정상 날짜와 시간이 포함된 백업을 검증함', async ({ page }) => {
@@ -283,3 +288,61 @@ test('잘못된 날짜와 시간의 백업은 거부함', async ({ page }) => {
   await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
 });
 
+
+
+test('복원 확인을 취소하면 기존 기록을 그대로 유지함', async ({ page }) => {
+  await page.locator('#name').fill('취소 후에도 유지할 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [{
+      id: 'cancelled-restore-entry',
+      date,
+      name: '복원되면 안 되는 기록',
+      start: '13:00',
+      end: '14:00',
+      kind: 'actual',
+      cat: '테스트',
+      note: '',
+    }],
+    todos: [],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'cancelled-restore-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.locator('#confirmImport').click();
+
+  await expect(page.locator('#entries')).toContainText('취소 후에도 유지할 기록');
+  await expect(page.locator('#entries')).not.toContainText('복원되면 안 되는 기록');
+  await expect(page.locator('#actual')).toHaveText('1시간 0분');
+  await expect(page.locator('#count')).toHaveText('1');
+});
+
+test('CSV 내보내기가 기록과 함께 다운로드됨', async ({ page }) => {
+  await page.locator('#name').fill('CSV 내보내기 테스트 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('.tools-menu').locator('summary').click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toMatch(/^time-tracker-.*-.*\.csv$/);
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+  expect(csv).toContain('CSV 내보내기 테스트 기록');
+  expect(csv).toContain('시간(분)');
+});
