@@ -24,3 +24,5 @@ body{max-width:900px;padding:14px 12px 40px}
 .timeline-quick-times{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .timeline-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .timeline-quick-actions button{padding:8px;font-size:12px}
+
+.todo-category{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:6px;background:#eef0f8;color:#5059a8;font-size:11px;font-weight:600}.todo-category:empty{display:none}
