@@ -485,3 +485,80 @@ test('타임라인 필터는 실제/계획 구간을 구분하고 전체 합계�
   await page.locator('[data-timeline-filter="all"]').click();
   await expect(page.locator('[data-timeline-entry]')).toHaveCount(2);
 });
+
+
+test('날짜 기록 복사 후 다른 날짜에 붙여넣으면 종류·분류·메모와 저장 데이터가 유지됨', async ({ page }) => {
+  const day = page.locator('#day');
+  const sourceDate = await day.inputValue();
+
+  await page.locator('#name').fill('복사할 운동');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#cat').fill('건강');
+  await page.locator('#note').fill('테스트 메모');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#copyDayEntries').click();
+  await expect(page.locator('#copyDayStatus')).toContainText('1개를 복사했어요');
+
+  const date = new Date(sourceDate + 'T12:00:00');
+  date.setDate(date.getDate() - 1);
+  const targetDate = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  await day.fill(targetDate);
+
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#pasteDayEntries').click();
+
+  const target = page.locator('#entries .entry');
+  await expect(target).toContainText('복사할 운동');
+  await expect(target).toContainText('계획');
+  await expect(target).toContainText('건강');
+  await expect(target).toContainText('테스트 메모');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(2);
+  expect(saved.entries.filter(entry => entry.date === sourceDate)).toHaveLength(1);
+  expect(saved.entries.filter(entry => entry.date === targetDate)).toHaveLength(1);
+  expect(saved.entries.find(entry => entry.date === targetDate)).toMatchObject({
+    name: '복사할 운동',
+    start: '09:00',
+    end: '10:00',
+    kind: 'planned',
+    cat: '건강',
+    note: '테스트 메모'
+  });
+
+  await page.reload();
+  await expect(page.locator('#entries')).toContainText('복사할 운동');
+});
+
+test('붙여넣기 대상 날짜에 같은 종류의 시간이 겹치면 기존 데이터를 변경하지 않음', async ({ page }) => {
+  const day = page.locator('#day');
+  const sourceDate = await day.inputValue();
+
+  await page.locator('#name').fill('복사 원본');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('#copyDayEntries').click();
+
+  const date = new Date(sourceDate + 'T12:00:00');
+  date.setDate(date.getDate() - 1);
+  const targetDate = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  await day.fill(targetDate);
+  await page.locator('#name').fill('기존 대상 기록');
+  await page.locator('#start').fill('09:30');
+  await page.locator('#end').fill('10:30');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  const before = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  page.on('dialog', dialog => dialog.dismiss());
+  await page.locator('#pasteDayEntries').click();
+  await expect(page.locator('#copyDayStatus')).toContainText('복사');
+  await expect(page.locator('#entries')).toContainText('기존 대상 기록');
+  await expect(page.locator('#entries')).not.toContainText('복사 원본');
+
+  const after = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  expect(after).toBe(before);
+});
