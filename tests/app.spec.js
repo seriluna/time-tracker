@@ -603,6 +603,7 @@ test('할 일 분류를 저장하고 마지막 분류를 다음 입력에도 기
   expect(saved.todos.find(todo => todo.text === '개인 할 일 분류 테스트')).toMatchObject({ date: sourceDate, category: 'personal', done: false });
 
   await page.reload();
+  await page.locator('[data-tab="todo"]').click();
   await expect(page.locator('#todoCategory')).toHaveValue('personal');
   await page.locator('#todoText').fill('기억한 분류 할 일');
   await page.locator('#todoForm button[type="submit"]').click();
