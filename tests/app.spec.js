@@ -232,3 +232,54 @@ test('유효한 JSON 백업 복원은 현재 데이터를 백업 데이터로 �
   await expect(page.locator('#actual')).toHaveText('1시간 0분');
 });
 
+test('정상 날짜와 시간이 포함된 백업을 검증함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [{
+      id: 'valid-date-time-entry',
+      date,
+      name: '정상 날짜 시간 기록',
+      start: '13:00',
+      end: '14:00',
+      kind: 'actual',
+      cat: '테스트',
+      note: '',
+    }],
+    todos: [],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'valid-date-time-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+});
+
+test('잘못된 날짜와 시간의 백업은 거부함', async ({ page }) => {
+  const backup = {
+    entries: [{
+      id: 'invalid-date-time-entry',
+      date: '2026-02-30',
+      name: '잘못된 날짜 기록',
+      start: '25:00',
+      end: '26:00',
+      kind: 'actual',
+      cat: '테스트',
+      note: '',
+    }],
+    todos: [],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-date-time-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+});
+
