@@ -107,8 +107,8 @@ function render(){
  $('planned').textContent=fmt(p);$('actual').textContent=fmt(a);$('count').textContent=es.length;
  $('entries').innerHTML=es.length?es.map(e=>'<div class="entry"><label class="entry-select"><input type="checkbox" data-entry-check="'+esc(e.id)+'" '+(selectedEntryIds.has(e.id)?'checked':'')+' aria-label="'+esc(e.name)+' 선택"></label><div class="entrymain"><b>'+esc(e.name)+'</b><div class="meta">'+e.start+'–'+e.end+' · '+(e.kind==='planned'?'계획':'실제')+' · '+esc(e.cat||'미분류')+(e.note?' · '+esc(e.note):'')+'</div></div><b class="duration">'+fmt(dur(e))+'</b><button data-edit="'+esc(e.id)+'">수정</button><button class="delete" data-del="'+esc(e.id)+'">삭제</button></div>').join(''):'<p class="muted">기록이 없습니다. 첫 시간을 추가해 보세요.</p>';
  $('selectAllEntries').checked=es.length>0&&es.every(x=>selectedEntryIds.has(x.id));
- const ts=s.todos.filter(t=>t.date===date);
- $('todos').innerHTML=ts.length?ts.map(t=>'<div class="todo '+(t.done?'done':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+'</label><button class="delete" data-todo-del="'+esc(t.id)+'">삭제</button></div>').join(''):'<p class="muted">할 일이 없습니다.</p>';
+ const ts=s.todos.filter(t=>t.date===date||(!t.done&&t.date<date)).sort((a,b)=>a.date.localeCompare(b.date));
+ $('todos').innerHTML=ts.length?ts.map(t=>{const overdue=t.date<date&&!t.done;return '<div class="todo '+(t.done?'done':'')+(overdue?' overdue':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+(overdue?'<small class="todo-due">미완료 · 원래 날짜 '+esc(t.date)+'</small>':'')+'</label><button class="delete" data-todo-del="'+esc(t.id)+'">삭제</button></div>'}).join(''):'<p class="muted">할 일이 없습니다.</p>';
  const goalMinutes=goal*60,percent=goalMinutes?Math.min(100,Math.round(a/goalMinutes*100)):0;
  $('goalLabel').textContent='목표 '+fmt(goalMinutes);$('goalProgress').style.width=percent+'%';
  $('goalMessage').textContent=a>=goalMinutes?'목표 달성! 실제 기록 '+fmt(a):'목표의 '+percent+'% · '+fmt(Math.max(0,goalMinutes-a))+' 남음';
