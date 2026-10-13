@@ -169,13 +169,13 @@ document.addEventListener('click',e=>{
  if(b.dataset.editRepeat){
  const name=b.dataset.editRepeat,group=s.entries.filter(x=>x.kind==='planned'&&x.note==='반복 일정: '+name);if(!group.length){alert('수정할 반복 일정이 없습니다.');return}
  const oldDates=[...new Set(group.map(x=>x.date))].sort(),start=prompt('새 시작일 (YYYY-MM-DD)',oldDates[0]);if(start===null)return;const end=prompt('새 종료일 (YYYY-MM-DD)',oldDates[oldDates.length-1]);if(end===null)return;
- const valid=v=>/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&!Number.isNaN(new Date(v+'T12:00:00').getTime())&&dateStr(new Date(v+'T12:00:00'))===v;
+ const valid=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(new Date(v+'T12:00:00').getTime())&&dateStr(new Date(v+'T12:00:00'))===v;
  if(!valid(start)||!valid(end)||end<start){alert('날짜를 YYYY-MM-DD 형식으로 올바르게 입력해 주세요.');return}
  const first=new Date(start+'T12:00:00'),last=new Date(end+'T12:00:00'),span=Math.round((last-first)/86400000)+1;if(span>90){alert('수정 범위는 최대 90일까지 가능합니다.');return}
  const dayLabels=['일','월','화','수','목','금','토'],oldDays=[...new Set(oldDates.map(d=>new Date(d+'T12:00:00').getDay()))].sort((a,b)=>a-b),defaultDays=oldDays.map(d=>dayLabels[d]).join(','),dayInput=prompt('반복할 요일을 입력하세요 (일,월,화,수,목,금,토)',defaultDays);if(dayInput===null)return;
  const dayMap={'일':0,'월':1,'화':2,'수':3,'목':4,'금':5,'토':6},weekdays=new Set(dayInput.split(/[\\s,，、]+/).filter(Boolean).map(x=>dayMap[x]));if(!weekdays.size||dayInput.split(/[\\s,，、]+/).filter(Boolean).some(x=>dayMap[x]===undefined)){alert('요일은 일,월,화,수,목,금,토 중에서 입력해 주세요.');return}
  const signatures=[...new Map(group.map(x=>[x.name+'|'+x.start+'|'+x.end+'|'+(x.cat||''),{name:x.name,start:x.start,end:x.end,cat:x.cat||''}])).values()];
- for(const t of signatures){const st=prompt(t.name+' 새 시작 시간 (HH:MM)',t.start);if(st===null)return;const en=prompt(t.name+' 새 종료 시간 (HH:MM)',t.end);if(en===null)return;if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(st)||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(en)||min(en)<=min(st)){alert(t.name+'의 시간이 올바르지 않습니다.');return}t.start=st;t.end=en}
+ for(const t of signatures){const st=prompt(t.name+' 새 시작 시간 (HH:MM)',t.start);if(st===null)return;const en=prompt(t.name+' 새 종료 시간 (HH:MM)',t.end);if(en===null)return;if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(st)||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(en)||min(en)<=min(st)){alert(t.name+'의 시간이 올바르지 않습니다.');return}t.start=st;t.end=en}
  const oldIds=new Set(group.map(x=>x.id)),proposed=[];
  for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1)){if(!weekdays.has(d.getDay()))continue;const date=dateStr(d);for(const t of signatures)proposed.push({id:'repeat-edit-'+date+'-'+name+'-'+t.start+'-'+t.name,date,name:t.name,start:t.start,end:t.end,kind:'planned',cat:t.cat,note:'반복 일정: '+name})}
  if(!proposed.length){alert('선택한 기간에 해당 요일이 없습니다.');return}
