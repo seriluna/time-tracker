@@ -11,25 +11,33 @@ Last reconciled: 2026-10-14 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main includes PR #8 (`ae11fe4ad0d7fe0a2ce38a9afc6e8643cdc882e6`) and PR #9 (`1cd0ecd7d1ca268bc44d87361fedf6f1bf4fa784`).
-- PR #7 backup/restore and CSV safety tests were merged; browser tests and Pages deployment previously passed.
-- PR #8 `feat: improve time entry category and defaults` was merged at `ae11fe4ad0d7fe0a2ce38a9afc6e8643cdc882e6`.
-- PR #8 CI run `38417170741`: Playwright browser regression tests passed.
-- Pages deployment run `38417683568` for PR #8 completed successfully.
-- No new user-data schema or localStorage migration was introduced in PR #8.
+- Main SHA: `4f6b15aa1bed22e7fd2b3ac0c1cc63c99e3655f4`.
+- PR #7 backup/restore and CSV safety tests merged.
+- PR #8 category/default input improvements merged; browser tests and Pages deployment passed.
+- PR #10 edit-form delete action merged.
+- PR #11 minute-level daily timeline merged.
+- PR #12 planned/actual timeline filters merged.
+- PR #13 default-entry-time edge-case fix merged; browser tests and Pages deployment passed.
+- PR #15 date copy/paste safety tests merged; browser tests and Pages deployment passed.
+- PR #16 overdue incomplete Todo visibility merged; browser tests and Pages deployment passed.
+- PR #17 Todo work/personal categories and last-selection persistence merged at `4f6b15aa1bed22e7fd2b3ac0c1cc63c99e3655f4`.
+- PR #17 browser regression tests passed: run `38488879036`.
+- PR #17 GitHub Pages deployment passed: run `38488878920`.
+- Todo category is optional on existing records; the last selected category is stored separately in `time-tracker-todo-category`. No existing records were rewritten or deleted by PR #17.
 
 ## Task queue (priority order)
 Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 
-1. [TODO] Step 2 follow-up: inspect default-time behavior for edge cases (selected date changes, planned vs actual entries, latest end near 23:59, and entries that overlap). Add tests/fix only if behavior is incorrect.
-2. [IN_PROGRESS] Step 3: add delete action to edit form; test cancel and confirmed deletion independently. Current PR: https://github.com/seriluna/time-tracker/pull/10 (update after PR creation).
-4. [IN_PROGRESS] Step 5: timeline filters for all/actual/planned and mobile clipping. Current PR: https://github.com/seriluna/time-tracker/pull/12 (update after PR creation).
-5. [TODO] Step 6: date copy/paste reliability.
-6. [TODO] Step 7: Todo date defaults, completed checkbox, and incomplete old-todo placement.
-7. [TODO] Step 8: Todo categories/subcategories and collapsible details.
-8. [TODO] Step 9: Todo date views and recurrence.
-9. [TODO] Step 10: category and period statistics.
-10. [TODO] Step 11: regression review, production verification, and data-safety checks.
+1. [DONE] Step 2 follow-up: inspect default-time edge cases; PR #13.
+2. [DONE] Step 3: edit-form delete action; PR #10.
+3. [DONE] Step 4: minute-level daily timeline; PR #11.
+4. [DONE] Step 5: planned/actual timeline filters; PR #12.
+5. [DONE] Step 6: date copy/paste reliability regression coverage; PR #15.
+6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
+7. [IN_PROGRESS] Step 8: work/personal Todo categories merged in PR #17; subtask details are being implemented in PR #18.
+8. [TODO] Step 9: Todo planning/recurrence UX review; avoid duplicating existing repeat-template functionality.
+9. [TODO] Step 10: category and period statistics review.
+10. [TODO] Step 11: full regression, data-safety review, mobile checks, and production verification.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
