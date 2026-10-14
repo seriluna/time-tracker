@@ -618,12 +618,11 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.locator('#todoForm button[type="submit"]').click();
   const todo = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
   await todo.locator('details.todo-subtasks summary').click();
-  await todo.locator('button[data-subtask-add]').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
   await expect(todo.locator('.todo-subtask-list')).toContainText('자료 정리');
   const check = todo.locator('input[data-subtask-check]');
-  await check.check();
+  await check.click();
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.todos.find(x => x.text === '프로젝트 준비').subtasks).toMatchObject([{ text: '자료 정리', done: true }]);
   await page.reload();
