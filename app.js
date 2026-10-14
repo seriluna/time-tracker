@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates',UNDO_KEY='time-tracker-undo-v1';
+const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates',UNDO_KEY='time-tracker-undo-v1',TODO_CATEGORY_KEY='time-tracker-todo-category';
 let editId=null,selectedEntryIds=new Set(),copiedDayEntries=[],timelineFilter='all',s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 try{s=JSON.parse(localStorage.getItem(KEY))||{entries:[],todos:[]}}catch{s={entries:[],todos:[]}}
 if(!s||!Array.isArray(s.entries)||!Array.isArray(s.todos))s={entries:[],todos:[]};
@@ -41,7 +41,7 @@ const downloadBackup=()=>{const raw=localStorage.getItem(AUTO_BACKUP_KEY);if(!ra
 const dateStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>dateStr(new Date());
 updateAutoBackupStatus();updateUndoStatus();
-$('day').value=today();$('goalHours').value=goal;$('weekGoal').value=weekGoal;$('monthGoal').value=monthGoal;
+$('day').value=today();const savedTodoCategory=localStorage.getItem(TODO_CATEGORY_KEY);if(savedTodoCategory==='work'||savedTodoCategory==='personal')$('todoCategory').value=savedTodoCategory;$('todoCategory').addEventListener('change',()=>localStorage.setItem(TODO_CATEGORY_KEY,$('todoCategory').value));$('goalHours').value=goal;$('weekGoal').value=weekGoal;$('monthGoal').value=monthGoal;
 const min=t=>{let [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m};
 const dur=e=>Math.max(0,min(e.end)-min(e.start));
 const fmt=n=>Math.floor(n/60)?Math.floor(n/60)+'시간 '+n%60+'분':n+'분';
@@ -108,7 +108,7 @@ function render(){
  $('entries').innerHTML=es.length?es.map(e=>'<div class="entry"><label class="entry-select"><input type="checkbox" data-entry-check="'+esc(e.id)+'" '+(selectedEntryIds.has(e.id)?'checked':'')+' aria-label="'+esc(e.name)+' 선택"></label><div class="entrymain"><b>'+esc(e.name)+'</b><div class="meta">'+e.start+'–'+e.end+' · '+(e.kind==='planned'?'계획':'실제')+' · '+esc(e.cat||'미분류')+(e.note?' · '+esc(e.note):'')+'</div></div><b class="duration">'+fmt(dur(e))+'</b><button data-edit="'+esc(e.id)+'">수정</button><button class="delete" data-del="'+esc(e.id)+'">삭제</button></div>').join(''):'<p class="muted">기록이 없습니다. 첫 시간을 추가해 보세요.</p>';
  $('selectAllEntries').checked=es.length>0&&es.every(x=>selectedEntryIds.has(x.id));
  const ts=s.todos.filter(t=>t.date===date||(!t.done&&t.date<date)).sort((a,b)=>a.date.localeCompare(b.date));
- $('todos').innerHTML=ts.length?ts.map(t=>{const overdue=t.date<date&&!t.done;return '<div class="todo '+(t.done?'done':'')+(overdue?' overdue':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+(overdue?'<small class="todo-due">미완료 · 원래 날짜 '+esc(t.date)+'</small>':'')+'</label><button class="delete" data-todo-del="'+esc(t.id)+'">삭제</button></div>'}).join(''):'<p class="muted">할 일이 없습니다.</p>';
+ $('todos').innerHTML=ts.length?ts.map(t=>{const overdue=t.date<date&&!t.done,category=t.category==='work'?'업무':t.category==='personal'?'개인':'분류 없음';return '<div class="todo '+(t.done?'done':'')+(overdue?' overdue':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+'<small class="todo-category">'+category+'</small>'+(overdue?'<small class="todo-due">미완료 · 원래 날짜 '+esc(t.date)+'</small>':'')+'</label><button class="delete" data-todo-del="'+esc(t.id)+'">삭제</button></div>'}).join(''):'<p class="muted">할 일이 없습니다.</p>';
  const goalMinutes=goal*60,percent=goalMinutes?Math.min(100,Math.round(a/goalMinutes*100)):0;
  $('goalLabel').textContent='목표 '+fmt(goalMinutes);$('goalProgress').style.width=percent+'%';
  $('goalMessage').textContent=a>=goalMinutes?'목표 달성! 실제 기록 '+fmt(a):'목표의 '+percent+'% · '+fmt(Math.max(0,goalMinutes-a))+' 남음';
@@ -139,7 +139,7 @@ $('entryForm').onsubmit=e=>{
  if(editId){const i=s.entries.findIndex(x=>x.id===editId);if(i>=0)s.entries[i]=item}else s.entries.push(item);
  save();resetEntryForm();render();
 };
-$('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false});save();$('todoText').value='';render()};
+$('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoText').value.trim();if(!text)return;const category=$('todoCategory').value==='personal'?'personal':'work';localStorage.setItem(TODO_CATEGORY_KEY,category);s.todos.push({id:Date.now().toString(),date:$('day').value,text,done:false,category});save();$('todoText').value='';render()};
 document.addEventListener('click',e=>{
  const filter=e.target.closest('[data-timeline-filter]');
  if(filter){timelineFilter=filter.dataset.timelineFilter;renderTimeline();return}
