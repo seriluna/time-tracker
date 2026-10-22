@@ -11,25 +11,30 @@ Last reconciled: 2026-10-14 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main includes PR #8 (`ae11fe4ad0d7fe0a2ce38a9afc6e8643cdc882e6`) and PR #9 (`1cd0ecd7d1ca268bc44d87361fedf6f1bf4fa784`).
-- PR #7 backup/restore and CSV safety tests were merged; browser tests and Pages deployment previously passed.
-- PR #8 `feat: improve time entry category and defaults` was merged at `ae11fe4ad0d7fe0a2ce38a9afc6e8643cdc882e6`.
-- PR #8 CI run `38417170741`: Playwright browser regression tests passed.
-- Pages deployment run `38417683568` for PR #8 completed successfully.
-- No new user-data schema or localStorage migration was introduced in PR #8.
+- PR #7 backup/restore and CSV safety improvements are merged.
+- PR #8 category suggestions/default entry times merged at `ae11fe4ad0d7fe0a2ce38a9afc6e8643cdc882e6`; browser tests and Pages deployment passed.
+- PR #9 added `AGENTS.md` and this progress file; merged at `1cd0ecd7d1ca268bc44d87361fedf6f1bf4fa784`.
+- PR #10 edit-form delete action merged at `e63368d283a9a88373c1e898fd80bcceb24bccf4`.
+- PR #11 minute-level timeline visualization is included in main at `0a03d29371519ce3eaa64fbbcca5b49a74b9e446`.
+- PR #12 timeline filter (all/actual/planned) merged at `d9f56dc45b14d9a7d9d10bde16f55ceb58837ce8`; browser tests run `38461063706` and Pages deployment run `38461062931` passed.
+- PR #13 default-entry time edge cases merged at `7fec8019aa1a57cbd35aa05e2dd27d98cf821fff`. It finds a non-overlapping same-kind default slot and recalculates defaults when the selected date changes outside edit mode. Tests cover a late-day record, date changes, and planned-vs-actual overlap.
+- Main browser regression run `38461470164` passed for PR #13 merge SHA.
+- GitHub Pages deployment run `38461469706` passed for PR #13 merge SHA.
+- No new user-data schema or localStorage migration was introduced by PR #13.
 
 ## Task queue (priority order)
 Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 
-1. [TODO] Step 2 follow-up: inspect default-time behavior for edge cases (selected date changes, planned vs actual entries, latest end near 23:59, and entries that overlap). Add tests/fix only if behavior is incorrect.
-2. [IN_PROGRESS] Step 3: add delete action to edit form; test cancel and confirmed deletion independently. Current PR: https://github.com/seriluna/time-tracker/pull/10 (update after PR creation).
-4. [IN_PROGRESS] Step 5: timeline filters for all/actual/planned and mobile clipping. Current PR: https://github.com/seriluna/time-tracker/pull/12 (update after PR creation).
-5. [TODO] Step 6: date copy/paste reliability.
-6. [TODO] Step 7: Todo date defaults, completed checkbox, and incomplete old-todo placement.
-7. [TODO] Step 8: Todo categories/subcategories and collapsible details.
-8. [TODO] Step 9: Todo date views and recurrence.
-9. [TODO] Step 10: category and period statistics.
-10. [TODO] Step 11: regression review, production verification, and data-safety checks.
+1. [DONE] Default-entry time edge cases: selected-date changes, planned vs actual, late-day records, and same-kind overlap avoidance. PR #13: https://github.com/seriluna/time-tracker/pull/13
+2. [DONE] Edit-form delete action; retain safe cancel/delete behavior. PR #10: https://github.com/seriluna/time-tracker/pull/10
+3. [DONE] Minute-level timeline visualization. PR #11: https://github.com/seriluna/time-tracker/pull/11
+4. [DONE] Timeline filters for all/actual/planned and mobile layout. PR #12: https://github.com/seriluna/time-tracker/pull/12
+5. [TODO] Date copy/paste reliability: inspect implementation and tests first; ensure copied entries preserve intended date/time/type/category and cannot silently create same-kind overlaps. Keep existing data untouched.
+6. [TODO] Todo date defaults, completed checkbox, and incomplete old-todo placement.
+7. [TODO] Todo categories/subcategories and collapsible details.
+8. [TODO] Todo date views and recurrence.
+9. [TODO] Category and period statistics.
+10. [TODO] Regression review, production verification, and data-safety checks.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
