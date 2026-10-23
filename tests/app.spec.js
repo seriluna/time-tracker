@@ -631,3 +631,29 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await restored.locator('details.todo-subtasks').locator('summary').click();
   await expect(restored.locator('input[data-subtask-check]')).toBeChecked();
 });
+
+
+test('주간·월간 분류 분석은 해당 기간의 계획과 실제 시간을 분류별로 합산함', async ({ page }) => {
+  await page.locator('#name').fill('운동 실제');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#cat').fill('운동');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#name').fill('업무 계획');
+  await page.locator('#start').fill('10:00');
+  await page.locator('#end').fill('10:30');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#cat').fill('업무');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('[data-tab="stats"]').click();
+  const breakdown = page.locator('#periodCategoryStats');
+  await expect(breakdown).toContainText('이번 주 분류별 시간');
+  await expect(breakdown).toContainText('이번 달 분류별 시간');
+  await expect(breakdown).toContainText('운동');
+  await expect(breakdown).toContainText('실제 1시간');
+  await expect(breakdown).toContainText('업무');
+  await expect(breakdown).toContainText('계획 30분');
+});
