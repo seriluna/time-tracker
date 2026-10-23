@@ -1,6 +1,6 @@
 # Time Tracker — Persisted Development Progress
 
-Last reconciled: 2026-10-14 (Asia/Shanghai)
+Last reconciled: 2026-10-24 (Asia/Shanghai)
 
 ## Product guardrails
 - Static GitHub Pages app; localStorage only; no backend or paid API for MVP.
@@ -11,7 +11,8 @@ Last reconciled: 2026-10-14 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `4f6b15aa1bed22e7fd2b3ac0c1cc63c99e3655f4`.
+- Main SHA: `8f8bedc49e74b337ceab0d15826042048e6bbde9`.
+- PR #18 Todo subtasks merged at `8f8bedc49e74b337ceab0d15826042048e6bbde9`; browser tests run `40040363239` and Pages deployment run `40040362701` passed.
 - PR #7 backup/restore and CSV safety tests merged.
 - PR #8 category/default input improvements merged; browser tests and Pages deployment passed.
 - PR #10 edit-form delete action merged.
@@ -21,6 +22,7 @@ Last reconciled: 2026-10-14 (Asia/Shanghai)
 - PR #15 date copy/paste safety tests merged; browser tests and Pages deployment passed.
 - PR #16 overdue incomplete Todo visibility merged; browser tests and Pages deployment passed.
 - PR #17 Todo work/personal categories and last-selection persistence merged at `4f6b15aa1bed22e7fd2b3ac0c1cc63c99e3655f4`.
+- PR #18 collapsible Todo subtasks merged; existing records remain compatible, and subtask state is part of the existing Todo record.
 - PR #17 browser regression tests passed: run `38488879036`.
 - PR #17 GitHub Pages deployment passed: run `38488878920`.
 - Todo category is optional on existing records; the last selected category is stored separately in `time-tracker-todo-category`. No existing records were rewritten or deleted by PR #17.
@@ -34,9 +36,9 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 4. [DONE] Step 5: planned/actual timeline filters; PR #12.
 5. [DONE] Step 6: date copy/paste reliability regression coverage; PR #15.
 6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
-7. [IN_PROGRESS] Step 8: work/personal Todo categories merged in PR #17; subtask details are being implemented in PR #18.
+7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
 8. [TODO] Step 9: Todo planning/recurrence UX review; avoid duplicating existing repeat-template functionality.
-9. [TODO] Step 10: category and period statistics review.
+9. [IN_PROGRESS] Step 10: add weekly/monthly category totals for planned and actual time.
 10. [TODO] Step 11: full regression, data-safety review, mobile checks, and production verification.
 
 ## Blocked-task policy
