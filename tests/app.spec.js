@@ -197,6 +197,27 @@ test('잘못된 JSON 백업은 거부하고 기존 기록을 유지함', async (
   await expect(page.locator('#count')).toHaveText('1');
 });
 
+test('JSON 문법이 깨진 백업은 거부하고 기존 기록을 유지함', async ({ page }) => {
+  await page.locator('#name').fill('문법 오류 후에도 유지할 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('문법 오류 후에도 유지할 기록');
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'malformed-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"entries":[', 'utf8'),
+  });
+
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect(page.locator('#entries')).toContainText('문법 오류 후에도 유지할 기록');
+  await expect(page.locator('#count')).toHaveText('1');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(1);
+  expect(saved.entries[0].name).toBe('문법 오류 후에도 유지할 기록');
+});
+
 test('유효한 JSON 백업 복원은 현재 데이터를 백업 데이터로 교체함', async ({ page }) => {
   await page.locator('#name').fill('복원 전 기록');
   await page.locator('#entryForm button[type="submit"]').click();
