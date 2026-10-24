@@ -958,3 +958,48 @@ test('반복 일정 묶음 삭제는 해당 묶음만 제거함', async ({ page 
   await expect(page.locator('#entries')).not.toContainText('계획 운동');
   await expect(page.locator('#entries .entry')).toHaveCount(0);
 });
+
+
+test('전체 기간 선택은 기록과 할 일의 가장 이른 날부터 가장 늦은 날까지 설정하고 수정 가능함', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [
+        { id: 'range-entry-1', date: '2026-08-12', name: '이른 기록', start: '09:00', end: '10:00', kind: 'actual', cat: '', note: '' },
+        { id: 'range-entry-2', date: '2026-10-21', name: '늦은 기록', start: '10:00', end: '11:00', kind: 'actual', cat: '', note: '' }
+      ],
+      todos: [
+        { id: 'range-todo-1', date: '2026-08-10', text: '가장 이른 할 일', done: false },
+        { id: 'range-todo-2', date: '2026-10-25', text: '가장 늦은 할 일', done: false }
+      ]
+    }));
+  });
+  await page.reload();
+  await page.locator('.tools-menu').locator('summary').click();
+
+  await expect(page.locator('#csvExport')).toHaveText('CSV 다운로드');
+  await page.locator('#selectAllCsvRange').click();
+  await expect(page.locator('#csvStart')).toHaveValue('2026-08-10');
+  await expect(page.locator('#csvEnd')).toHaveValue('2026-10-25');
+  await expect(page.locator('#csvRangeStatus')).toContainText('날짜를 수정해 범위를 좁힐 수 있습니다.');
+
+  await page.locator('#csvStart').fill('2026-09-01');
+  await expect(page.locator('#csvStart')).toHaveValue('2026-09-01');
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('time-tracker-2026-09-01-2026-10-25.csv');
+});
+
+test('백업 도구는 CSV, JSON 백업, 파일 복원 순서로 배치됨', async ({ page }) => {
+  await page.locator('.tools-menu').locator('summary').click();
+  const order = await page.locator('.tools-content').evaluate(el => {
+    const csv = el.querySelector('.csv-range');
+    const actions = el.querySelector('.backup-actions');
+    const auto = el.querySelector('.auto-backup-panel');
+    return [csv, actions, auto].map(node => [...el.children].indexOf(node));
+  });
+  expect(order[0]).toBeLessThan(order[1]);
+  expect(order[1]).toBeLessThan(order[2]);
+  await expect(page.locator('#export')).toHaveText('JSON 백업 다운로드');
+  await expect(page.locator('#importBtn')).toHaveText('백업 파일 복원');
+});
