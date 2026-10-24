@@ -11,7 +11,8 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `8f8bedc49e74b337ceab0d15826042048e6bbde9`.
+- Main SHA: `2535968fa1adeecf2ae30f6b7a39e914aeed83a6`.
+- PR #19 weekly/monthly category time summaries merged at `2535968fa1adeecf2ae30f6b7a39e914aeed83a6`; PR browser tests run `40040554544` passed, main browser tests run `40045099062` passed, and Pages deployment run `40045099006` passed.
 - PR #18 Todo subtasks merged at `8f8bedc49e74b337ceab0d15826042048e6bbde9`; browser tests run `40040363239` and Pages deployment run `40040362701` passed.
 - PR #7 backup/restore and CSV safety tests merged.
 - PR #8 category/default input improvements merged; browser tests and Pages deployment passed.
@@ -38,8 +39,15 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
 7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
 8. [TODO] Step 9: Todo planning/recurrence UX review; avoid duplicating existing repeat-template functionality.
-9. [IN_PROGRESS] Step 10: add weekly/monthly category totals for planned and actual time.
-10. [TODO] Step 11: full regression, data-safety review, mobile checks, and production verification.
+9. [DONE] Step 10: weekly/monthly category totals for planned and actual time; PR #19.
+10. [IN_PROGRESS] Step 11: full regression, data-safety review, mobile checks, and production verification.
+
+## Step 11 regression review (2026-10-24)
+- Reviewed the current Playwright suite: CRUD and save/reload, overlapping actual records, planned/actual totals, date navigation, JSON backup validation and restore/cancel preservation, CSV download, copy/paste safety, Todo completion/category/subtasks persistence, overdue Todo behavior, period category summaries, and 360px viewport overflow are covered.
+- Main browser test run `40045099062` passed at SHA `2535968fa1adeecf2ae30f6b7a39e914aeed83a6`.
+- GitHub Pages deployment run `40045099006` passed at the same SHA.
+- Manual checks on physical mobile devices have not been performed; automated viewport test is not a substitute.
+- Remaining review focus: verify test suite has no important uncovered regression, and document production/device verification honestly.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
