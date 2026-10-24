@@ -11,9 +11,12 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `950c65f2f6c32a3ee47da416388d8edb3b96131e`.
-- PR #19 weekly/monthly category time summaries merged at `2535968fa1adeecf2ae30f6b7a39e914aeed83a6`; PR browser tests run `40040554544` passed, main browser tests run `40045099062` passed, and Pages deployment run `40045099006` passed.
+- Main SHA: `56371ef37811fb02d70deaf80804d361dd7d07b8`.
+- PR #21 added regression tests for restoring a legacy Todo backup without a `subtasks` property and exporting Todo subtask completion status in CSV; merged to main at `56371ef37811fb02d70deaf80804d361dd7d07b8`.
+- Main browser test run `40047870707` passed at the current main SHA.
+- GitHub Pages deployment run `40047870286` passed at the current main SHA.
 - PR #20 documentation reconciliation merged at `950c65f2f6c32a3ee47da416388d8edb3b96131e`; PR browser tests run `40045357515` passed, main browser tests run `40047433596` passed, and Pages deployment run `40047432993` passed.
+- PR #19 weekly/monthly category time summaries merged at `2535968fa1adeecf2ae30f6b7a39e914aeed83a6`; PR browser tests run `40040554544` passed, main browser tests run `40045099062` passed, and Pages deployment run `40045099006` passed.
 - PR #18 Todo subtasks merged at `8f8bedc49e74b337ceab0d15826042048e6bbde9`; browser tests run `40040363239` and Pages deployment run `40040362701` passed.
 - PR #7 backup/restore and CSV safety tests merged.
 - PR #8 category/default input improvements merged; browser tests and Pages deployment passed.
@@ -24,9 +27,6 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 - PR #15 date copy/paste safety tests merged; browser tests and Pages deployment passed.
 - PR #16 overdue incomplete Todo visibility merged; browser tests and Pages deployment passed.
 - PR #17 Todo work/personal categories and last-selection persistence merged at `4f6b15aa1bed22e7fd2b3ac0c1cc63c99e3655f4`.
-- PR #18 collapsible Todo subtasks merged; existing records remain compatible, and subtask state is part of the existing Todo record.
-- PR #17 browser regression tests passed: run `38488879036`.
-- PR #17 GitHub Pages deployment passed: run `38488878920`.
 - Todo category is optional on existing records; the last selected category is stored separately in `time-tracker-todo-category`. No existing records were rewritten or deleted by PR #17.
 
 ## Task queue (priority order)
@@ -39,17 +39,23 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 5. [DONE] Step 6: date copy/paste reliability regression coverage; PR #15.
 6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
 7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
-8. [TODO] Step 9: Todo planning/recurrence UX review; avoid duplicating existing repeat-template functionality.
+8. [IN_PROGRESS] Step 9: Todo planning/recurrence UX review; inspect existing repeat-template functionality and tests before deciding whether a specific gap warrants a small change.
 9. [DONE] Step 10: weekly/monthly category totals for planned and actual time; PR #19.
-10. [IN_PROGRESS] Step 11: full regression, data-safety review, mobile checks, and production verification.
+10. [IN_PROGRESS] Step 11: automated regression and production verification complete; physical-device mobile checks still outstanding.
 
 ## Step 11 regression review (2026-10-24)
 - Reviewed the current Playwright suite: CRUD and save/reload, overlapping actual records, planned/actual totals, date navigation, JSON backup validation and restore/cancel preservation, CSV download, copy/paste safety, Todo completion/category/subtasks persistence, overdue Todo behavior, period category summaries, and 360px viewport overflow are covered.
 - Main browser test run `40047433596` passed at SHA `950c65f2f6c32a3ee47da416388d8edb3b96131e`.
-- GitHub Pages deployment run `40047432993` passed at the same SHA.
+- Main browser test run `40047870707` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`, including PR #21 compatibility/export regression cases.
+- GitHub Pages deployment run `40047432993` passed at SHA `950c65f2f6c32a3ee47da416388d8edb3b96131e`.
+- GitHub Pages deployment run `40047870286` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`.
+- Automated regression and deployment verification are complete for the current main SHA.
 - Manual checks on physical mobile devices have not been performed; automated viewport test is not a substitute.
-- Added a follow-up PR to cover legacy Todo backup restore without `subtasks` and CSV export of Todo subtask completion state.
-- Manual physical-device checks remain outstanding; automated viewport test is not a substitute.
+
+## Step 9 review notes
+- Existing app code already includes repeat templates and repeat groups for planned entries with the note prefix `반복 일정: `.
+- Do not recreate recurrence functionality. Review the existing UI and tests for a specific usability or reliability gap before changing behavior.
+- If no meaningful gap is found, close this review without adding features and move to the next validated product priority.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
