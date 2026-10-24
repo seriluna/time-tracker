@@ -309,7 +309,7 @@ test('JSON 백업 복원 시 시간 기록과 할 일을 함께 복원하고 새
       text: '복원된 할 일',
       done: false,
       category: 'personal',
-      subtasks: [{ text: '하위 작업 확인', done: true }],
+      subtasks: [{ id: 'mixed-restore-subtask', text: '하위 작업 확인', done: true }],
     }],
   };
 
@@ -334,7 +334,7 @@ test('JSON 백업 복원 시 시간 기록과 할 일을 함께 복원하고 새
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.entries).toHaveLength(1);
   expect(saved.todos).toHaveLength(1);
-  expect(saved.todos[0].subtasks).toEqual([{ text: '하위 작업 확인', done: true }]);
+  expect(saved.todos[0].subtasks).toEqual([{ id: 'mixed-restore-subtask', text: '하위 작업 확인', done: true }]);
 
   await page.reload();
   await expect(page.locator('#entries')).toContainText('복원된 시간 기록');
