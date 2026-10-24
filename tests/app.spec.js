@@ -258,6 +258,97 @@ test('유효한 JSON 백업 복원은 현재 데이터를 백업 데이터로 �
   await expect(page.locator('#actual')).toHaveText('1시간 0분');
 });
 
+test('JSON 백업 다운로드에 시간 기록과 할 일이 모두 포함됨', async ({ page }) => {
+  await page.locator('#name').fill('JSON 백업 시간 기록');
+  await page.locator('#start').fill('08:00');
+  await page.locator('#end').fill('09:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('JSON 백업 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+
+  await page.locator('.tools-menu').locator('summary').click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#export').click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toMatch(/^time-tracker-backup-.*\.json$/);
+  const stream = await download.createReadStream();
+  let raw = '';
+  for await (const chunk of stream) raw += chunk.toString('utf8');
+  const backup = JSON.parse(raw);
+  expect(backup.entries).toHaveLength(1);
+  expect(backup.entries[0].name).toBe('JSON 백업 시간 기록');
+  expect(backup.todos).toHaveLength(1);
+  expect(backup.todos[0].text).toBe('JSON 백업 할 일');
+});
+
+test('JSON 백업 복원 시 시간 기록과 할 일을 함께 복원하고 새로고침 후 유지함', async ({ page }) => {
+  await page.locator('#name').fill('복원 전 시간 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('복원 전 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [{
+      id: 'mixed-restore-entry',
+      date,
+      name: '복원된 시간 기록',
+      start: '13:00',
+      end: '14:00',
+      kind: 'actual',
+      cat: '테스트',
+      note: '',
+    }],
+    todos: [{
+      id: 'mixed-restore-todo',
+      date,
+      text: '복원된 할 일',
+      done: false,
+      category: 'personal',
+      subtasks: [{ id: 'mixed-restore-subtask', text: '하위 작업 확인', done: true }],
+    }],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'mixed-entries-todos-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+
+  await expect(page.locator('#entries')).toContainText('복원된 시간 기록');
+  await expect(page.locator('#entries')).not.toContainText('복원 전 시간 기록');
+  await page.locator('[data-tab="todo"]').click();
+  const restoredTodo = page.locator('#todos .todo').filter({ hasText: '복원된 할 일' });
+  await expect(restoredTodo).toBeVisible();
+  await expect(page.locator('#todos')).not.toContainText('복원 전 할 일');
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(1);
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0].subtasks).toEqual([{ id: 'mixed-restore-subtask', text: '하위 작업 확인', done: true }]);
+
+  await page.reload();
+  await expect(page.locator('#entries')).toContainText('복원된 시간 기록');
+  await page.locator('[data-tab="todo"]').click();
+  const afterReload = page.locator('#todos .todo').filter({ hasText: '복원된 할 일' });
+  await expect(afterReload).toBeVisible();
+  await afterReload.locator('details.todo-subtasks summary').click();
+  await expect(afterReload.locator('input[data-subtask-check]')).toBeChecked();
+
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries[0].name).toBe('복원된 시간 기록');
+  expect(saved.todos[0].text).toBe('복원된 할 일');
+});
+
 test('정상 날짜와 시간이 포함된 백업을 검증함', async ({ page }) => {
   const date = await page.locator('#day').inputValue();
   const backup = {
