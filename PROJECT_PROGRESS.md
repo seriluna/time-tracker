@@ -11,8 +11,10 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `56371ef37811fb02d70deaf80804d361dd7d07b8`.
+- Main SHA: `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` (PR #22 merged).
 - PR #21 added regression tests for restoring a legacy Todo backup without a `subtasks` property and exporting Todo subtask completion status in CSV; merged to main at `56371ef37811fb02d70deaf80804d361dd7d07b8`.
+- PR #22 reconciled this progress file with PR #21, recorded automated verification vs. physical-device checks, and clarified the Step 9 scope; PR #22 merged at `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` after browser tests run `40048616600` passed.
+- Main browser test run `40049048984` and Pages deployment run `40049047758` for SHA `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` were still in progress at last check.
 - Main browser test run `40047870707` passed at the current main SHA.
 - GitHub Pages deployment run `40047870286` passed at the current main SHA.
 - PR #20 documentation reconciliation merged at `950c65f2f6c32a3ee47da416388d8edb3b96131e`; PR browser tests run `40045357515` passed, main browser tests run `40047433596` passed, and Pages deployment run `40047432993` passed.
@@ -39,7 +41,7 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 5. [DONE] Step 6: date copy/paste reliability regression coverage; PR #15.
 6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
 7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
-8. [IN_PROGRESS] Step 9: Todo planning/recurrence UX review; inspect existing repeat-template functionality and tests before deciding whether a specific gap warrants a small change.
+8. [IN_PROGRESS] Step 9: repeat schedule regression coverage; PR #23 adds tests for generation + reload persistence, overlap safety, and repeat-group deletion. Await CI before merging.
 9. [DONE] Step 10: weekly/monthly category totals for planned and actual time; PR #19.
 10. [IN_PROGRESS] Step 11: automated regression and production verification complete; physical-device mobile checks still outstanding.
 
@@ -49,13 +51,13 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Main browser test run `40047870707` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`, including PR #21 compatibility/export regression cases.
 - GitHub Pages deployment run `40047432993` passed at SHA `950c65f2f6c32a3ee47da416388d8edb3b96131e`.
 - GitHub Pages deployment run `40047870286` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`.
-- Automated regression and deployment verification are complete for the current main SHA.
+- Automated regression and deployment verification passed for SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`; the follow-up main test/deploy runs for PR #22's merge are tracked above.
 - Manual checks on physical mobile devices have not been performed; automated viewport test is not a substitute.
 
 ## Step 9 review notes
 - Existing app code already includes repeat templates and repeat groups for planned entries with the note prefix `반복 일정: `.
 - Do not recreate recurrence functionality. Review the existing UI and tests for a specific usability or reliability gap before changing behavior.
-- If no meaningful gap is found, close this review without adding features and move to the next validated product priority.
+- Identified a concrete verification gap: no repeat-schedule tests were present in `tests/app.spec.js`. PR #23 adds tests for weekday generation and reload persistence, overlap protection preserving existing plans, and deletion of only the selected repeat group. Application behavior is unchanged.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
