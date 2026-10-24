@@ -657,3 +657,60 @@ test('주간·월간 분류 분석은 해당 기간의 계획과 실제 시간�
   await expect(breakdown).toContainText('업무');
   await expect(breakdown).toContainText('계획 30분');
 });
+
+
+test('이전 형식의 Todo 백업은 하위 작업 필드 없이도 복원됨', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [],
+    todos: [{
+      id: 'legacy-todo-1',
+      date,
+      text: '이전 형식 할 일',
+      done: false,
+      category: 'work',
+    }],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'legacy-todo-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('이전 형식 할 일');
+  await expect(page.locator('#todos .todo-subtasks summary')).toContainText('하위 작업 (0)');
+
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('이전 형식 할 일');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0]).not.toHaveProperty('subtasks');
+});
+
+test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('CSV 하위 작업 테스트');
+  await page.locator('#todoForm button[type="submit"]').click();
+
+  const todo = page.locator('#todos .todo').filter({ hasText: 'CSV 하위 작업 테스트' });
+  await todo.locator('details.todo-subtasks summary').click();
+  await todo.locator('input[data-subtask-input]').fill('자료 정리');
+  await todo.locator('button[data-subtask-add]').click();
+  await todo.locator('input[data-subtask-check]').check();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+  expect(csv).toContain('CSV 하위 작업 테스트');
+  expect(csv).toContain('[완료] 자료 정리');
+});
