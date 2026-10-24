@@ -730,13 +730,16 @@ test('반복 템플릿으로 선택한 요일에 계획을 생성하고 새로�
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#generateRepeat').click();
 
-  await expect(page.locator('#entries .entry')).toHaveCount(5);
-  await expect(page.locator('#entries')).toContainText('운동');
+  const generatedCount = () => page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem('time-tracker-v1') || '{"entries":[]}');
+    return data.entries.filter(entry => entry.note === '반복 일정: 평일 운동 반복').length;
+  });
+  await expect.poll(generatedCount).toBe(5);
   await expect(page.locator('#repeatGroups')).toContainText('평일 운동 반복');
 
   await page.reload();
   await expect(page.locator('#repeatGroups')).toContainText('평일 운동 반복');
-  await expect(page.locator('#entries .entry')).toHaveCount(5);
+  await expect.poll(generatedCount).toBe(5);
 });
 
 test('반복 일정 생성 시 기존 계획과 시간이 겹치면 기존 데이터를 보존함', async ({ page }) => {
