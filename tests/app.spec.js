@@ -714,3 +714,82 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   expect(csv).toContain('CSV 하위 작업 테스트');
   expect(csv).toContain('[완료] 자료 정리');
 });
+
+
+test('반복 템플릿으로 선택한 요일에 계획을 생성하고 새로고침 후 유지함', async ({ page }) => {
+  await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
+  await page.locator('#templateName').fill('평일 운동 반복');
+  await page.locator('#templateActivity').fill('운동');
+  await page.locator('#templateStart').fill('07:00');
+  await page.locator('#templateEnd').fill('08:00');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.locator('[data-template-check]').check();
+
+  await page.locator('#repeatStart').fill('2026-10-26');
+  await page.locator('#repeatEnd').fill('2026-10-30');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#generateRepeat').click();
+
+  const generatedCount = () => page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem('time-tracker-v1') || '{"entries":[]}');
+    return data.entries.filter(entry => entry.note === '반복 일정: 평일 운동 반복').length;
+  });
+  await expect.poll(generatedCount).toBe(5);
+  await expect(page.locator('#repeatGroups')).toContainText('평일 운동 반복');
+
+  await page.reload();
+  await expect(page.locator('#repeatGroups')).toContainText('평일 운동 반복');
+  await expect.poll(generatedCount).toBe(5);
+});
+
+test('반복 일정 생성 시 기존 계획과 시간이 겹치면 기존 데이터를 보존함', async ({ page }) => {
+  await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
+  await page.locator('#day').fill('2026-10-26');
+  await page.locator('#name').fill('기존 계획');
+  await page.locator('#start').fill('07:00');
+  await page.locator('#end').fill('08:00');
+  await page.locator('#kind').selectOption('planned');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('기존 계획');
+
+  await page.locator('#templateName').fill('겹치는 반복');
+  await page.locator('#templateActivity').fill('반복 운동');
+  await page.locator('#templateStart').fill('07:30');
+  await page.locator('#templateEnd').fill('08:30');
+  await page.locator('#templateKind').selectOption('planned');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.locator('[data-template-check]').check();
+  await page.locator('#repeatStart').fill('2026-10-26');
+  await page.locator('#repeatEnd').fill('2026-10-30');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#generateRepeat').click();
+
+  await expect(page.locator('#entries')).toContainText('기존 계획');
+  await expect(page.locator('#entries')).not.toContainText('반복 운동');
+  await expect(page.locator('#entries .entry')).toHaveCount(1);
+});
+
+test('반복 일정 묶음 삭제는 해당 묶음만 제거함', async ({ page }) => {
+  await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
+  await page.locator('#templateName').fill('삭제 대상 반복');
+  await page.locator('#templateActivity').fill('계획 운동');
+  await page.locator('#templateStart').fill('07:00');
+  await page.locator('#templateEnd').fill('08:00');
+  await page.locator('#templateKind').selectOption('planned');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.locator('[data-template-check]').check();
+  await page.locator('#repeatStart').fill('2026-10-26');
+  await page.locator('#repeatEnd').fill('2026-10-27');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#generateRepeat').click();
+  await expect(page.locator('#repeatGroups')).toContainText('삭제 대상 반복');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-delete-repeat="삭제 대상 반복"]').click();
+
+  await expect(page.locator('#repeatGroups')).not.toContainText('삭제 대상 반복');
+  await expect(page.locator('#entries')).not.toContainText('계획 운동');
+  await expect(page.locator('#entries .entry')).toHaveCount(0);
+});
