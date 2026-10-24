@@ -11,11 +11,13 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `b4b940a7321887d5efa764902c85d6c106bf18ab` (PR #23 merged; repeat-schedule regression tests added).
+- Main SHA: `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7` (PR #25 merged; malformed JSON backup preservation test added).
 - PR #21 added regression tests for restoring a legacy Todo backup without a `subtasks` property and exporting Todo subtask completion status in CSV; merged to main at `56371ef37811fb02d70deaf80804d361dd7d07b8`.
 - PR #22 reconciled this progress file with PR #21, recorded automated verification vs. physical-device checks, and clarified the Step 9 scope; PR #22 merged at `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` after browser tests run `40048616600` passed.
 - Main browser test run `40049048984` and Pages deployment run `40049047758` passed for pre-PR #23 SHA `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb`.
 - PR #23 `test: cover repeat schedule safety and lifecycle` merged at `b4b940a7321887d5efa764902c85d6c106bf18ab`. PR-head browser test run `40050588266` passed; post-merge main browser test run `40050709567` and Pages deployment run `40050708830` both passed at the merge SHA.
+- PR #24 documentation reconciliation merged at `f892203b37245abc36dc7c53aa2d4d0c7b322194`; its browser test run `40084698441` passed.
+- PR #25 added a regression test ensuring syntactically malformed JSON backup import is rejected without changing existing records/localStorage. PR test run `40085095269` passed; merged at `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7`. Post-merge main browser test run `40085533578` and Pages deployment run `40085532938` both passed.
 - Main browser test run `40047870707` passed at the current main SHA.
 - GitHub Pages deployment run `40047870286` passed at the current main SHA.
 - PR #20 documentation reconciliation merged at `950c65f2f6c32a3ee47da416388d8edb3b96131e`; PR browser tests run `40045357515` passed, main browser tests run `40047433596` passed, and Pages deployment run `40047432993` passed.
@@ -44,7 +46,8 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
 8. [DONE] Step 9: repeat schedule regression coverage; PR #23 merged after repeat generation + reload persistence, overlap protection, and repeat-group deletion tests passed. PR-head run `40050588266` and post-merge main run `40050709567` passed.
 9. [DONE] Step 10: weekly/monthly category totals for planned and actual time; PR #19.
-10. [IN_PROGRESS] Step 11: automated regression and GitHub Pages deployment verification passed at merge SHA `b4b940a7321887d5efa764902c85d6c106bf18ab` (browser run `40050709567`; Pages run `40050708830`). Physical-device mobile checks still outstanding.
+10. [IN_PROGRESS] Step 11: automated regression and GitHub Pages deployment verification passed at SHA `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7` (browser run `40085533578`; Pages run `40085532938`). Physical-device mobile checks still outstanding.
+11. [IN_PROGRESS] Step 12: strengthen backup/data safety coverage. PR #25 adds malformed-JSON rejection + existing-record preservation; mixed-data backup round-trip and physical-device checks remain to review.
 
 ## Step 11 regression review (2026-10-24)
 - Reviewed the current Playwright suite: CRUD and save/reload, overlapping actual records, planned/actual totals, date navigation, JSON backup validation and restore/cancel preservation, CSV download, copy/paste safety, Todo completion/category/subtasks persistence, overdue Todo behavior, period category summaries, and 360px viewport overflow are covered.
@@ -52,7 +55,8 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Main browser test run `40047870707` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`, including PR #21 compatibility/export regression cases.
 - GitHub Pages deployment run `40047432993` passed at SHA `950c65f2f6c32a3ee47da416388d8edb3b96131e`.
 - GitHub Pages deployment run `40047870286` passed at SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`.
-- Automated regression and deployment verification passed for SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`; the follow-up main test/deploy runs for PR #22's merge are tracked above.
+- Automated regression and deployment verification passed for SHA `56371ef37811fb02d70deaf80804d361dd7d07b8`; follow-up main test/deploy runs for later merges are tracked above.
+- Latest post-merge browser test run `40085533578` and Pages deployment run `40085532938` both passed for SHA `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7`, including the new malformed JSON backup preservation regression.
 - Manual checks on physical mobile devices have not been performed; automated viewport test is not a substitute.
 
 ## Step 9 review notes
@@ -71,3 +75,10 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - These files preserve instructions and progress when an AI coding agent is invoked again.
 - GitHub Actions can run tests/deploy workflows, but cannot autonomously plan and write new code without a separately configured coding agent and its authorized credentials.
 - Do not add API keys to source files or commit secrets. Any agent automation must be scoped, reviewable, budget-limited, and must not bypass PR review or tests.
+
+
+## Backup safety follow-up (2026-10-24)
+- Existing coverage already includes malformed-shaped backup rejection, valid JSON restore replacing current data, invalid date/time rejection, canceling restore without changing existing data, CSV download, and legacy Todo backup compatibility.
+- Added a focused test for syntactically malformed JSON (`'{"entries":['`) to assert import validation error, unchanged visible entry count, and unchanged `time-tracker-v1` localStorage entry. PR #25 test run `40085095269` passed.
+- PR #25 merged at `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7`; post-merge browser test `40085533578` and Pages deployment `40085532938` passed.
+- Remaining checks: inspect backup export coverage and mixed entries+Todo restore round-trip coverage; physical mobile-device verification remains outstanding. No app code or actual user data was modified by PR #25.
