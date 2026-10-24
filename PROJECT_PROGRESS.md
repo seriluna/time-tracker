@@ -11,10 +11,11 @@ Last reconciled: 2026-10-24 (Asia/Shanghai)
 ## Current verified repository state
 - Repository: https://github.com/seriluna/time-tracker
 - Production site: https://seriluna.github.io/time-tracker/
-- Main SHA: `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` (PR #22 merged).
+- Main SHA: `b4b940a7321887d5efa764902c85d6c106bf18ab` (PR #23 merged; repeat-schedule regression tests added).
 - PR #21 added regression tests for restoring a legacy Todo backup without a `subtasks` property and exporting Todo subtask completion status in CSV; merged to main at `56371ef37811fb02d70deaf80804d361dd7d07b8`.
 - PR #22 reconciled this progress file with PR #21, recorded automated verification vs. physical-device checks, and clarified the Step 9 scope; PR #22 merged at `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb` after browser tests run `40048616600` passed.
-- Main browser test run `40049048984` passed and Pages deployment run `40049047758` passed for SHA `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb`.
+- Main browser test run `40049048984` and Pages deployment run `40049047758` passed for pre-PR #23 SHA `5aa98f08cbf6d3e08bfbb20c7d44d923eeb7c4cb`.
+- PR #23 `test: cover repeat schedule safety and lifecycle` merged at `b4b940a7321887d5efa764902c85d6c106bf18ab`. PR-head browser test run `40050588266` passed; post-merge main browser test run `40050709567` and Pages deployment run `40050708830` both passed at the merge SHA.
 - Main browser test run `40047870707` passed at the current main SHA.
 - GitHub Pages deployment run `40047870286` passed at the current main SHA.
 - PR #20 documentation reconciliation merged at `950c65f2f6c32a3ee47da416388d8edb3b96131e`; PR browser tests run `40045357515` passed, main browser tests run `40047433596` passed, and Pages deployment run `40047432993` passed.
@@ -41,9 +42,9 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 5. [DONE] Step 6: date copy/paste reliability regression coverage; PR #15.
 6. [DONE] Step 7: Todo completion and overdue incomplete Todo visibility; PR #16.
 7. [DONE] Step 8: work/personal Todo categories (PR #17) and collapsible subtasks (PR #18).
-8. [IN_PROGRESS] Step 9: repeat schedule regression coverage; PR #23 adds tests for generation + reload persistence, overlap safety, and repeat-group deletion. Initial CI run `40049131805` failed because tests interacted with controls inside the collapsed `details.advanced-panel`; tests now explicitly open the panel and require a fresh CI run before merging.
+8. [DONE] Step 9: repeat schedule regression coverage; PR #23 merged after repeat generation + reload persistence, overlap protection, and repeat-group deletion tests passed. PR-head run `40050588266` and post-merge main run `40050709567` passed.
 9. [DONE] Step 10: weekly/monthly category totals for planned and actual time; PR #19.
-10. [IN_PROGRESS] Step 11: automated regression and production verification complete; physical-device mobile checks still outstanding.
+10. [IN_PROGRESS] Step 11: automated regression and GitHub Pages deployment verification passed at merge SHA `b4b940a7321887d5efa764902c85d6c106bf18ab` (browser run `40050709567`; Pages run `40050708830`). Physical-device mobile checks still outstanding.
 
 ## Step 11 regression review (2026-10-24)
 - Reviewed the current Playwright suite: CRUD and save/reload, overlapping actual records, planned/actual totals, date navigation, JSON backup validation and restore/cancel preservation, CSV download, copy/paste safety, Todo completion/category/subtasks persistence, overdue Todo behavior, period category summaries, and 360px viewport overflow are covered.
@@ -57,8 +58,8 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 ## Step 9 review notes
 - Existing app code already includes repeat templates and repeat groups for planned entries with the note prefix `반복 일정: `.
 - Do not recreate recurrence functionality. Review the existing UI and tests for a specific usability or reliability gap before changing behavior.
-- Identified a concrete verification gap: no repeat-schedule tests were present in `tests/app.spec.js`. PR #23 adds tests for weekday generation and reload persistence, overlap protection preserving existing plans, and deletion of only the selected repeat group. Application behavior is unchanged.
-- Initial PR #23 CI run `40049131805` reported 37 passed and 3 repeat-schedule tests timed out because the advanced settings `<details>` section was collapsed, leaving its controls inaccessible. Updated all three tests to open `.advanced-panel` before interacting; commit `2702b3260b18e561219841f0a2561b78387a8613` opened the panel in tests. Review also caught that the overlap fixture created its existing entry on the default current date rather than the repeat range; the fixture now sets `#day` to `2026-10-26` before adding the existing plan. Commit `55327ba723d2c17ecc4f7522687ae22228d5ac67` contains this test-fixture correction. The latest failure showed 39 passing tests and one assertion expecting five entries in the currently selected day view, although generated plans span five dates. Updated the test to count the five repeat-group records directly in localStorage and verify they remain after reload. New commit `cf5e65e1d0238f6eb2238b89a08d3e9666d129b1`; await CI for this latest head. Do not merge until the rerun passes.
+- Identified a concrete verification gap: no repeat-schedule tests were present in `tests/app.spec.js`. PR #23 adds tests for weekday generation and reload persistence, overlap protection preserving existing plans, and deletion of only the selected repeat group. Application behavior is unchanged. PR #23 merged at `b4b940a7321887d5efa764902c85d6c106bf18ab` after its latest head run `40050588266` passed and the post-merge browser test `40050709567` and Pages deployment `40050708830` both passed.
+- Initial PR #23 CI run `40049131805` reported 37 passed and 3 repeat-schedule tests timed out because the advanced settings `<details>` section was collapsed, leaving its controls inaccessible. Updated all three tests to open `.advanced-panel` before interacting; commit `2702b3260b18e561219841f0a2561b78387a8613` opened the panel in tests. Review also caught that the overlap fixture created its existing entry on the default current date rather than the repeat range; the fixture now sets `#day` to `2026-10-26` before adding the existing plan. Commit `55327ba723d2c17ecc4f7522687ae22228d5ac67` contains this test-fixture correction. The latest failure showed 39 passing tests and one assertion expecting five entries in the currently selected day view, although generated plans span five dates. Updated the test to count the five repeat-group records directly in localStorage and verify they remain after reload. New test commit `cf5e65e1d0238f6eb2238b89a08d3e9666d129b1`; latest PR head also included the progress update. Browser test run `40050588266` passed on the latest PR head; PR #23 was then merged and post-merge browser/deployment checks both passed.
 
 ## Blocked-task policy
 - Do not mark a task DONE when tests fail or verification is missing.
