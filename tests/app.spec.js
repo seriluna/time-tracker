@@ -77,6 +77,25 @@ test('실행 취소로 직전 기록 추가를 되돌림', async ({ page }) => {
   await expect(page.locator('#count')).toHaveText('0');
 });
 
+
+test('직전 저장 상태 복구는 최신 자동 백업이 아닌 이전 데이터 상태를 복원함', async ({ page }) => {
+  await page.locator('#name').fill('먼저 저장한 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('#name').fill('나중에 추가한 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('나중에 추가한 기록');
+
+  await page.locator('.tools-menu summary').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#restorePreviousBackup').click();
+
+  await expect(page.locator('#entries')).toContainText('먼저 저장한 기록');
+  await expect(page.locator('#entries')).not.toContainText('나중에 추가한 기록');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(1);
+  expect(saved.entries[0].name).toBe('먼저 저장한 기록');
+});
+
 test('오늘 24시간이 세로 타임라인으로 표시됨', async ({ page }) => {
   await expect(page.locator('#dayTimeline')).toBeVisible();
   await expect(page.locator('.timeline-hour')).toHaveCount(24);
