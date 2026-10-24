@@ -741,6 +741,7 @@ test('반복 템플릿으로 선택한 요일에 계획을 생성하고 새로�
 
 test('반복 일정 생성 시 기존 계획과 시간이 겹치면 기존 데이터를 보존함', async ({ page }) => {
   await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
+  await page.locator('#day').fill('2026-10-26');
   await page.locator('#name').fill('기존 계획');
   await page.locator('#start').fill('07:00');
   await page.locator('#end').fill('08:00');
