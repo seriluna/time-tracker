@@ -478,6 +478,40 @@ test('CSV 내보내기가 기록과 함께 다운로드됨', async ({ page }) =>
   expect(csv).toContain('시간(분)');
 });
 
+test('선택한 기간의 시간 기록과 할 일만 CSV로 내보냄', async ({ page }) => {
+  await page.locator('#day').fill('2026-10-01');
+  await page.locator('#name').fill('기간 안의 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#day').fill('2026-10-20');
+  await page.locator('#name').fill('기간 밖의 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#day').fill('2026-10-05');
+  await page.locator('#todoText').fill('기간 안의 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await page.locator('#day').fill('2026-10-20');
+  await page.locator('#todoText').fill('기간 밖의 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#csvStart').fill('2026-10-01');
+  await page.locator('#csvEnd').fill('2026-10-10');
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('time-tracker-2026-10-01-2026-10-10.csv');
+
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+  expect(csv).toContain('기간 안의 기록');
+  expect(csv).toContain('기간 안의 할 일');
+  expect(csv).not.toContain('기간 밖의 기록');
+  expect(csv).not.toContain('기간 밖의 할 일');
+});
+
 test('분류는 추천 항목을 선택하거나 사용자 지정 값을 입력할 수 있음', async ({ page }) => {
   await expect(page.locator('#cat')).toHaveAttribute('list', 'categorySuggestions');
   await expect(page.locator('#categorySuggestions option')).toHaveCount(9);
