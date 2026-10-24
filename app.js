@@ -122,6 +122,9 @@ function render(){
 
  const month=date.slice(0,7),me=s.entries.filter(x=>x.date.startsWith(month)&&x.kind==='actual'),monthTotal=me.reduce((sum,x)=>sum+dur(x),0),days=new Set(me.map(x=>x.date)).size;
  $('monthStats').innerHTML='<div class="periodtotal">월간 실제 기록 <b>'+fmt(monthTotal)+'</b></div><div class="periodrow"><span>실제 기록한 날짜</span><b>'+days+'일</b></div><div class="periodrow"><span>기록일 평균</span><b>'+fmt(days?Math.round(monthTotal/days):0)+'</b></div>';
+ const weekEntries=s.entries.filter(x=>x.date>=dateStr(weekStart)&&x.date<=dateStr(new Date(weekStart.getFullYear(),weekStart.getMonth(),weekStart.getDate()+6,12)));
+ const periodCategoryRows=(items,label)=>{const totals={};items.forEach(x=>{const key=x.cat||'미분류';totals[key]??={actual:0,planned:0};totals[key][x.kind]+=dur(x)});const rows=Object.entries(totals).sort((a,b)=>(b[1].actual+b[1].planned)-(a[1].actual+a[1].planned)).map(([category,value])=>'<div class="statrow"><span>'+esc(category)+'</span><span>실제 '+fmt(value.actual)+' · 계획 '+fmt(value.planned)+'</span></div>');return '<section class="period-category-group"><h3>'+label+'</h3>'+(rows.length?rows.join(''):'<p class="muted">이 기간의 기록이 없습니다.</p>')+'</section>'};
+ $('periodCategoryStats').innerHTML=periodCategoryRows(weekEntries,'이번 주 분류별 시간')+periodCategoryRows(s.entries.filter(x=>x.date.startsWith(month)),'이번 달 분류별 시간');
  const mg=monthGoal*60,mp=mg?Math.min(100,Math.round(monthTotal/mg*100)):0;$('monthGoalProgress').style.width=mp+'%';$('monthGoalMessage').textContent=monthTotal>=mg?'월간 목표 달성! '+fmt(monthTotal):'월간 목표의 '+mp+'% · '+fmt(Math.max(0,mg-monthTotal))+' 남음';
 
  renderCalendar();renderTemplates();renderRepeatGroups();
