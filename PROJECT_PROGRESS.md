@@ -93,3 +93,13 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - PR #34 merged at `c3cff0d69e00329f4c47f380c952a4f82e1f0b40`; post-merge browser test run [40165603074](https://github.com/seriluna/time-tracker/actions/runs/40165603074) passed and GitHub Pages deployment run [40165602920](https://github.com/seriluna/time-tracker/actions/runs/40165602920) passed for the same SHA.
 - The automated 360px viewport test remains a regression check, not a substitute for hands-on testing on a physical mobile device.
 - Next practical check: on a real phone, add/edit/delete a record, change dates, reload the app, and verify JSON backup download/restore and CSV export. Do not claim physical-device verification until actually performed.
+
+
+## Reconciliation update (2026-10-25, latest review)
+- Latest commit observed in the repository commit search: `7a422be47f37008c9e5cfeea266157f91ad3b865` (storage-write failure handling and regression coverage). This is newer than the previous progress entry's `c3cff0d` reference.
+- Reviewed `tests/app.spec.js` and the backup/import logic in `app.js`. Existing tests already cover JSON backup export including both entries and todos, mixed entries+todos restore, todo subtask completion preservation, reload persistence after restore, malformed/invalid backup rejection, cancellation preservation, corrupted-storage recovery, and storage-write failure protection. No duplicate test or app-code change is justified by this review.
+- Confirmed the previously supplied browser workflow run [40184408868](https://github.com/seriluna/time-tracker/actions/runs/40184408868) completed successfully, including JavaScript syntax and Playwright browser regression steps.
+- Confirmed the previously supplied Pages workflow run [40184408401](https://github.com/seriluna/time-tracker/actions/runs/40184408401) completed successfully, including build and deploy jobs. These are verified run results, but this review did not independently establish that either run was triggered by the latest SHA `7a422be`; do not describe them as post-merge verification for that SHA without checking run metadata.
+- Open-PR search did not return a reliable authoritative snapshot of current PR states; do not infer that there are no open PRs from that result alone.
+- Physical Android device checks remain outstanding. The automated 360px viewport test is not a substitute for manual mobile verification.
+- Next: verify the workflow run commit SHA and current PR state with an authoritative repository/Actions listing when available; complete the physical-device checklist. Do not add duplicate backup tests unless a concrete gap is found.

@@ -100,3 +100,11 @@
 ## 9. 다음 대화창에 붙여 넣을 시작 문구
 
 이 저장소의 `PROJECT_HANDOVER.md`, `README.md`, `TESTING.md`를 먼저 읽고 현재 상태를 확인해. 앱은 Time Tracker 프로젝트만 다룬다. 관련 없는 저장소는 변경하지 않는다. 기존 코드나 설정을 수정하기 전에 작업 범위와 위험을 먼저 설명하고 승인받는다. 수정 후 자동 테스트와 실제 검증 여부를 구분해서 보고하며, 확인하지 않은 항목을 성공했다고 말하지 않는다.
+
+
+## Current handover update (2026-10-25)
+- Latest commit observed in repository history: `7a422be47f37008c9e5cfeea266157f91ad3b865` (storage-write failure handling and regression coverage). Treat this as the latest observed commit, while confirming the current default-branch HEAD before starting future code changes.
+- Backup safety review: `tests/app.spec.js` already tests JSON export of both `entries` and `todos`, mixed-data restore, subtask completion preservation, reload persistence, malformed/invalid backup rejection, cancel preservation, corrupted-storage recovery, and write-failure protection. Avoid duplicate tests unless a concrete missing case is identified.
+- Browser run [40184408868](https://github.com/seriluna/time-tracker/actions/runs/40184408868) and Pages deployment run [40184408401](https://github.com/seriluna/time-tracker/actions/runs/40184408401) were confirmed successful at the job level. Their exact tested/deployed commit SHA was not independently confirmed during this review.
+- Manual Android checks remain incomplete: CRUD, date navigation, reload persistence, JSON download/restore, CSV export, and mobile interactions. Do not claim physical-device verification until performed.
+- Preserve existing `time-tracker-v1` storage key and `{ entries: [], todos: [] }` shape. No live user data was changed during this review.
