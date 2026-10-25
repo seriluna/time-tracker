@@ -115,3 +115,8 @@
 - PR-head browser workflow [40185750669](https://github.com/seriluna/time-tracker/actions/runs/40185750669) passed, including JavaScript syntax check and Playwright browser regression tests.
 - Post-merge GitHub Pages deployment for the merge SHA was not independently confirmed. The public site inspection attempt was blocked, so deployment status remains unverified rather than assumed successful.
 - Continue with deployment verification and physical Android checks; automated viewport tests do not substitute for a real device.
+
+## Annual analysis work (2026-10-25)
+- User reported that the mobile checklist had no issues. Treat this as user-reported, not as an independently witnessed physical-device test.
+- The current feature branch `feat/yearly-time-summary` adds annual planned/actual summaries and monthly rows to the Analysis tab, plus a Playwright regression test and service-worker cache bump (`time-tracker-v28`).
+- Do not merge or claim deployment until PR CI and post-merge deployment are checked. Existing localStorage key/schema and user data remain unchanged.
