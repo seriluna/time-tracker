@@ -34,6 +34,7 @@ test('손상된 기존 저장 데이터는 덮어쓰지 않고 안전한 백업 
     buffer: Buffer.from(JSON.stringify({ entries: [], todos: [] }), 'utf8'),
   });
   await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  await page.locator('.tools-menu summary').click();
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#confirmImport').click();
 
