@@ -1174,11 +1174,11 @@ test('연간 요약은 선택한 연도의 월별 계획·실제 시간과 기�
   await page.locator('[data-tab="stats"]').click();
 
   const yearly = page.locator('#yearStats');
-  await expect(yearly).toContainText('2026년 계획 1시간 30분 · 실제 2시간 · 133%');
+  await expect(yearly).toContainText('2026년 계획 1시간 30분 · 실제 2시간 0분 · 133%');
   await expect(yearly).toContainText('실제 기록한 날짜');
   await expect(yearly).toContainText('2일');
   await expect(yearly.locator('.periodrow')).toHaveCount(14);
   await expect(yearly.locator('.periodrow').nth(2)).toContainText('01월');
-  await expect(yearly.locator('.periodrow').nth(2)).toContainText('계획 1시간 30분 · 실제 1시간 · 67%');
+  await expect(yearly.locator('.periodrow').nth(2)).toContainText('계획 1시간 30분 · 실제 1시간 0분 · 67%');
   await expect(yearly).not.toContainText('10시간');
 });
