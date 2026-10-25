@@ -8,6 +8,44 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
+
+test('손상된 기존 저장 데이터는 덮어쓰지 않고 안전한 백업 복원을 허용함', async ({ page }) => {
+  const corruptRaw = '{"entries":[';
+  await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), corruptRaw);
+  await page.reload();
+  await page.locator('.tools-menu summary').click();
+
+  await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
+  await expect(page.locator('#importPreview')).toContainText('기존 저장 데이터를 읽지 못했습니다');
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#downloadCorruptOriginal').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^time-tracker-corrupted-original-.*\.json$/);
+  const stream = await download.createReadStream();
+  let original = '';
+  for await (const chunk of stream) original += chunk.toString('utf8');
+  expect(original).toBe(corruptRaw);
+
+  await page.locator('#importFile').setInputFiles({
+    name: 'recovery-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ entries: [], todos: [] }), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  if (!(await page.locator('#confirmImport').isVisible())) await page.locator('.tools-menu summary').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+
+  const saved = await page.evaluate(() => ({
+    raw: localStorage.getItem('time-tracker-v1'),
+    data: JSON.parse(localStorage.getItem('time-tracker-v1')),
+  }));
+  expect(saved.raw).not.toBe(corruptRaw);
+  expect(saved.data).toEqual({ entries: [], todos: [] });
+  await expect(page.locator('#storageHealthStatus')).not.toContainText('읽기 전용 안전 모드');
+});
+
 test('앱 초기화와 핵심 DOM 확인', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '시간 기록', exact: true })).toBeVisible();
   await expect(page.locator('#entryForm')).toBeVisible();
