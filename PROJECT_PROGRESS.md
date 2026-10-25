@@ -103,3 +103,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Open-PR search did not return a reliable authoritative snapshot of current PR states; do not infer that there are no open PRs from that result alone.
 - Physical Android device checks remain outstanding. The automated 360px viewport test is not a substitute for manual mobile verification.
 - Next: verify the workflow run commit SHA and current PR state with an authoritative repository/Actions listing when available; complete the physical-device checklist. Do not add duplicate backup tests unless a concrete gap is found.
+
+
+## Post-merge verification (2026-10-25)
+- PR #37 (documentation-only backup-safety reconciliation) merged successfully at `a77e2397f7ae6c3cc6e579b4965defbf3f623052`.
+- PR-head browser workflow run [40185750669](https://github.com/seriluna/time-tracker/actions/runs/40185750669) completed successfully; JavaScript syntax check, dependency install, Chromium install, and Playwright browser regression tests all passed.
+- A follow-up attempt to verify the public Pages URL through the available inspection channel was blocked, and no authoritative post-merge Pages workflow run for merge SHA `a77e2397f7ae6c3cc6e579b4965defbf3f623052` was available in the workflow-run results. Therefore, do not claim post-merge deployment verification.
+- No app code, localStorage key/schema, or live user data was changed by PR #37.
+- Remaining practical validation: manually check the deployed site and perform the physical Android checklist (CRUD, date navigation, reload persistence, JSON backup/restore, CSV export, and mobile interactions).
