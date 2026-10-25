@@ -111,3 +111,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - A follow-up attempt to verify the public Pages URL through the available inspection channel was blocked, and no authoritative post-merge Pages workflow run for merge SHA `a77e2397f7ae6c3cc6e579b4965defbf3f623052` was available in the workflow-run results. Therefore, do not claim post-merge deployment verification.
 - No app code, localStorage key/schema, or live user data was changed by PR #37.
 - Remaining practical validation: manually check the deployed site and perform the physical Android checklist (CRUD, date navigation, reload persistence, JSON backup/restore, CSV export, and mobile interactions).
+
+## Annual summary feature (2026-10-25)
+- User reported that the manual mobile checklist had no issues. This is user-reported confirmation, not an independently observed device test; do not state that the assistant personally verified a physical Android device.
+- Current analysis already provides daily, weekly, and monthly views. Added an annual summary on the feature branch to fill the P1 yearly-analysis gap.
+- Annual summary uses the selected date's year and shows total planned/actual duration, actual-recorded days, average actual time per recorded day, and all 12 months' planned/actual totals with completion ratio where a plan exists.
+- Added a focused Playwright regression test covering multiple months, planned-vs-actual calculations, recorded-day count, and exclusion of a record from another year.
+- Service worker cache version is bumped from `time-tracker-v27` to `time-tracker-v28` so installed PWA clients can fetch the updated static assets.
+- This work is not merged or deployed yet; wait for PR browser tests before considering it complete. No storage key or data schema changes.
