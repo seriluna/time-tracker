@@ -1155,3 +1155,30 @@ test('저장 공간 오류가 나면 기존 기록을 덮어쓰지 않고 오류
   await expect(page.locator('#storageHealthStatus')).toContainText('최근 저장 오류');
   await expect(page.locator('#entries')).toContainText('기존 보존 기록');
 });
+
+
+test('연간 요약은 선택한 연도의 월별 계획·실제 시간과 기록일만 집계함', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [
+        { id: 'year-actual-jan', date: '2026-01-05', name: '1월 실제', start: '09:00', end: '10:00', kind: 'actual', cat: '업무', note: '' },
+        { id: 'year-planned-jan', date: '2026-01-05', name: '1월 계획', start: '10:00', end: '11:30', kind: 'planned', cat: '업무', note: '' },
+        { id: 'year-actual-mar', date: '2026-03-12', name: '3월 실제', start: '13:00', end: '14:00', kind: 'actual', cat: '운동', note: '' },
+        { id: 'other-year', date: '2025-12-20', name: '이전 연도', start: '08:00', end: '18:00', kind: 'actual', cat: '기타', note: '' }
+      ],
+      todos: []
+    }));
+  });
+  await page.reload();
+  await page.locator('#day').fill('2026-03-12');
+  await page.locator('[data-tab="stats"]').click();
+
+  const yearly = page.locator('#yearStats');
+  await expect(yearly).toContainText('2026년 계획 1시간 30분 · 실제 2시간 · 133%');
+  await expect(yearly).toContainText('실제 기록한 날짜');
+  await expect(yearly).toContainText('2일');
+  await expect(yearly.locator('.periodrow')).toHaveCount(14);
+  await expect(yearly.locator('.periodrow').nth(2)).toContainText('01월');
+  await expect(yearly.locator('.periodrow').nth(2)).toContainText('계획 1시간 30분 · 실제 1시간 · 67%');
+  await expect(yearly).not.toContainText('10시간');
+});
