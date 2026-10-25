@@ -557,6 +557,39 @@ test('선택한 기간의 시간 기록과 할 일만 CSV로 내보냄', async (
   expect(csv).not.toContain('기간 밖의 할 일');
 });
 
+test('CSV 내보내기는 쉼표와 따옴표가 포함된 활동명을 올바르게 이스케이프함', async ({ page }) => {
+  const activity = 'CSV "검증", 운동';
+  await page.locator('#name').fill(activity);
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('.tools-menu summary').click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+
+  expect(csv).toContain('"CSV ""검증"", 운동"');
+});
+
+test('CSV 시작일이 종료일보다 늦으면 다운로드를 차단함', async ({ page }) => {
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#csvStart').fill('2026-10-20');
+  await page.locator('#csvEnd').fill('2026-10-01');
+  page.once('dialog', dialog => {
+    expect(dialog.message()).toContain('시작일은 종료일보다 늦을 수 없습니다');
+    dialog.accept();
+  });
+  const downloads = [];
+  page.on('download', download => downloads.push(download));
+  await page.locator('#csvExport').click();
+  await expect(page.locator('#csvRangeStatus')).not.toContainText('CSV 다운로드를 시작했습니다.');
+  expect(downloads).toHaveLength(0);
+});
+
 test('분류는 추천 항목을 선택하거나 사용자 지정 값을 입력할 수 있음', async ({ page }) => {
   await expect(page.locator('#cat')).toHaveAttribute('list', 'categorySuggestions');
   await expect(page.locator('#categorySuggestions option')).toHaveCount(9);
