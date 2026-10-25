@@ -108,3 +108,10 @@
 - Browser run [40184408868](https://github.com/seriluna/time-tracker/actions/runs/40184408868) and Pages deployment run [40184408401](https://github.com/seriluna/time-tracker/actions/runs/40184408401) were confirmed successful at the job level. Their exact tested/deployed commit SHA was not independently confirmed during this review.
 - Manual Android checks remain incomplete: CRUD, date navigation, reload persistence, JSON download/restore, CSV export, and mobile interactions. Do not claim physical-device verification until performed.
 - Preserve existing `time-tracker-v1` storage key and `{ entries: [], todos: [] }` shape. No live user data was changed during this review.
+
+
+## Post-merge status update (2026-10-25)
+- PR #37 was merged into `main` at `a77e2397f7ae6c3cc6e579b4965defbf3f623052`. It updates only `PROJECT_PROGRESS.md` and `PROJECT_HANDOVER.md`; app behavior and stored data format are unchanged.
+- PR-head browser workflow [40185750669](https://github.com/seriluna/time-tracker/actions/runs/40185750669) passed, including JavaScript syntax check and Playwright browser regression tests.
+- Post-merge GitHub Pages deployment for the merge SHA was not independently confirmed. The public site inspection attempt was blocked, so deployment status remains unverified rather than assumed successful.
+- Continue with deployment verification and physical Android checks; automated viewport tests do not substitute for a real device.
