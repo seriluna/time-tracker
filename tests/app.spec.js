@@ -244,6 +244,43 @@ test('날짜를 바꾸면 선택한 날짜의 기록만 표시됨', async ({ pag
   await expect(page.locator('#entries')).toContainText('오늘 기록');
 });
 
+test('서로 다른 날짜의 기록은 날짜 이동과 새로고침 후에도 각각 유지됨', async ({ page }) => {
+  const firstDate = await page.locator('#day').inputValue();
+  const secondDate = await page.evaluate(value => {
+    const d = new Date(value + 'T12:00:00');
+    d.setDate(d.getDate() - 2);
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }, firstDate);
+
+  await page.locator('#name').fill('첫 번째 날짜 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('#day').fill(secondDate);
+  await expect(page.locator('#entries')).not.toContainText('첫 번째 날짜 기록');
+  await page.locator('#name').fill('두 번째 날짜 기록');
+  await page.locator('#start').fill('11:00');
+  await page.locator('#end').fill('12:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('두 번째 날짜 기록');
+
+  await page.reload();
+  await expect(page.locator('#day')).toHaveValue(secondDate);
+  await expect(page.locator('#entries')).toContainText('두 번째 날짜 기록');
+  await expect(page.locator('#entries')).not.toContainText('첫 번째 날짜 기록');
+
+  await page.locator('#day').fill(firstDate);
+  await expect(page.locator('#entries')).toContainText('첫 번째 날짜 기록');
+  await expect(page.locator('#entries')).not.toContainText('두 번째 날짜 기록');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(2);
+  expect(saved.entries.find(entry => entry.name === '첫 번째 날짜 기록').date).toBe(firstDate);
+  expect(saved.entries.find(entry => entry.name === '두 번째 날짜 기록').date).toBe(secondDate);
+});
+
 test('잘못된 JSON 백업은 거부하고 기존 기록을 유지함', async ({ page }) => {
   await page.locator('#name').fill('기존 기록 유지');
   await page.locator('#entryForm button[type="submit"]').click();
