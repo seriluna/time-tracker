@@ -1003,3 +1003,49 @@ test('백업 도구는 CSV, JSON 백업, 파일 복원 순서로 배치됨', asy
   await expect(page.locator('#export')).toHaveText('JSON 백업 다운로드');
   await expect(page.locator('#importBtn')).toHaveText('백업 파일 복원');
 });
+
+
+test('손상된 기존 저장 데이터는 초기화하거나 새 기록으로 덮어쓰지 않음', async ({ page }) => {
+  const corrupted = '{"entries":[';
+  await page.addInitScript(value => localStorage.setItem('time-tracker-v1', value), corrupted);
+  await page.goto('/');
+  await expect(page.locator('#storageRecoveryBanner')).toBeVisible();
+  await expect(page.locator('#storageRecoveryBanner')).toContainText('원본은 덮어쓰지 않도록 보호 중');
+  await page.locator('#name').fill('저장되면 안 되는 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  const stored = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  expect(stored).toBe(corrupted);
+  await expect(page.locator('#storageRecoveryBanner')).toBeVisible();
+});
+
+test('손상된 저장 데이터 상태에서 유효한 JSON 백업 복원으로 복구 가능', async ({ page }) => {
+  const corrupted = '{"entries":[';
+  const date = await page.evaluate(() => {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  });
+  await page.addInitScript(value => localStorage.setItem('time-tracker-v1', value), corrupted);
+  await page.goto('/');
+  const backup = {
+    entries: [{ id: 'recovery-entry', date, name: '복구 성공 기록', start: '13:00', end: '14:00', kind: 'actual', cat: '테스트', note: '' }],
+    todos: [],
+  };
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'recovery-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await expect(page.locator('#storageRecoveryBanner')).toHaveCount(0);
+  await expect(page.locator('#entries')).toContainText('복구 성공 기록');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(stored.entries).toHaveLength(1);
+  expect(stored.entries[0].name).toBe('복구 성공 기록');
+});
