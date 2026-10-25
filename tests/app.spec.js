@@ -1146,6 +1146,8 @@ test('저장 공간 오류가 나면 기존 기록을 덮어쓰지 않고 오류
   });
 
   await page.locator('#name').fill('저장 실패 테스트 기록');
+  await page.locator('#start').fill('10:00');
+  await page.locator('#end').fill('11:00');
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#entryForm button[type="submit"]').click();
 
