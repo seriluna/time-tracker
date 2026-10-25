@@ -1124,3 +1124,34 @@ test('백업 도구는 CSV, JSON 백업, 파일 복원 순서로 배치됨', asy
   await expect(page.locator('#export')).toHaveText('JSON 백업 다운로드');
   await expect(page.locator('#importBtn')).toHaveText('백업 파일 복원');
 });
+
+
+test('저장 공간 오류가 나면 기존 기록을 덮어쓰지 않고 오류를 알림', async ({ page }) => {
+  const original = {
+    entries: [
+      { id: 'preserve-entry', date: await page.locator('#day').inputValue(), name: '기존 보존 기록', start: '09:00', end: '10:00', kind: 'actual', cat: '', note: '' }
+    ],
+    todos: []
+  };
+  const originalRaw = JSON.stringify(original);
+  await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), originalRaw);
+  await page.reload();
+
+  await page.evaluate(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === 'time-tracker-v1') throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      return originalSetItem.call(this, key, value);
+    };
+  });
+
+  await page.locator('#name').fill('저장 실패 테스트 기록');
+  await page.locator('#start').fill('10:00');
+  await page.locator('#end').fill('11:00');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(originalRaw);
+  await expect(page.locator('#storageHealthStatus')).toContainText('최근 저장 오류');
+  await expect(page.locator('#entries')).toContainText('기존 보존 기록');
+});
