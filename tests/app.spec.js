@@ -18,6 +18,13 @@ test('손상된 기존 저장 데이터는 덮어쓰지 않고 안전한 백업 
   await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
   await expect(page.locator('#importPreview')).toContainText('기존 저장 데이터를 읽지 못했습니다');
 
+  // Attempt a normal write while in safe mode; the corrupt original must remain byte-for-byte unchanged.
+  await page.locator('#name').fill('안전 모드에서 저장 시도');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(corruptRaw);
+  await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
+
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#downloadCorruptOriginal').click();
   const download = await downloadPromise;
