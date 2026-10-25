@@ -120,3 +120,11 @@
 - User reported that the mobile checklist had no issues. Treat this as user-reported, not as an independently witnessed physical-device test.
 - The current feature branch `feat/yearly-time-summary` adds annual planned/actual summaries and monthly rows to the Analysis tab, plus a Playwright regression test and service-worker cache bump (`time-tracker-v28`).
 - Do not merge or claim deployment until PR CI and post-merge deployment are checked. Existing localStorage key/schema and user data remain unchanged.
+
+
+## Annual summary post-merge status (2026-10-25)
+- PR #39 adds annual planned/actual totals, recorded-day count, average actual time per recorded day, and monthly rows for the selected year. It is merged into `main` at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`.
+- Browser workflow [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) passed after correcting test expectations to match the UI duration format.
+- Confirmed the `main` branch contains the annual summary markup and `time-tracker-v28` service-worker cache version.
+- Live GitHub Pages deployment was not independently verified; check the Pages workflow run or public site before claiming deployment complete.
+- No storage key/schema migration or user data deletion occurred. Physical Android checks are not independently verified; distinguish user-reported checks from assistant-performed tests.
