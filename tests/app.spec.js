@@ -27,14 +27,13 @@ test('손상된 기존 저장 데이터는 덮어쓰지 않고 안전한 백업 
   for await (const chunk of stream) original += chunk.toString('utf8');
   expect(original).toBe(corruptRaw);
 
-  await page.locator('.tools-menu summary').click();
   await page.locator('#importFile').setInputFiles({
     name: 'recovery-backup.json',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify({ entries: [], todos: [] }), 'utf8'),
   });
   await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
-  await page.locator('.tools-menu summary').click();
+  if (!(await page.locator('#confirmImport').isVisible())) await page.locator('.tools-menu summary').click();
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#confirmImport').click();
 
