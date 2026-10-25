@@ -82,3 +82,14 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Added a focused test for syntactically malformed JSON (`'{"entries":['`) to assert import validation error, unchanged visible entry count, and unchanged `time-tracker-v1` localStorage entry. PR #25 test run `40085095269` passed.
 - PR #25 merged at `7c5b5e01ab3386ec8dd082a5ad66a316c110e1d7`; post-merge browser test `40085533578` and Pages deployment `40085532938` passed.
 - Remaining checks: inspect backup export coverage and mixed entries+Todo restore round-trip coverage; physical mobile-device verification remains outstanding. No app code or actual user data was modified by PR #25.
+
+
+## Reconciliation update (2026-10-25)
+- Current main SHA after PR #34: `c3cff0d69e00329f4c47f380c952a4f82e1f0b40`.
+- PR #31 added safe-mode protection for malformed/invalid stored data and a recovery path; merged to main at `59af7380f9da92cf25e296e52ca74df802e316da`.
+- PR #32 added regression coverage that ordinary writes remain blocked in corrupted-data safe mode; merged at `e898810c2cade101192047e8483c2f41b3243366`.
+- PR #33 added CSV escaping and invalid date-range regression tests; merged at `0029d0a80768fe0695d7b83615abe3bec6484c74`.
+- PR #34 added a multi-date persistence regression test. The first draft incorrectly expected the selected date to persist across reload; investigation confirmed the app intentionally defaults to today on reload. The test was corrected to verify both dates remain stored and that each record appears when its date is selected. No app code or stored-data schema changed.
+- PR #34 merged at `c3cff0d69e00329f4c47f380c952a4f82e1f0b40`; post-merge browser test run [40165603074](https://github.com/seriluna/time-tracker/actions/runs/40165603074) passed and GitHub Pages deployment run [40165602920](https://github.com/seriluna/time-tracker/actions/runs/40165602920) passed for the same SHA.
+- The automated 360px viewport test remains a regression check, not a substitute for hands-on testing on a physical mobile device.
+- Next practical check: on a real phone, add/edit/delete a record, change dates, reload the app, and verify JSON backup download/restore and CSV export. Do not claim physical-device verification until actually performed.
