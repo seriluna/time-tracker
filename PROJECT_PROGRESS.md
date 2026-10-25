@@ -119,3 +119,12 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Added a focused Playwright regression test covering multiple months, planned-vs-actual calculations, recorded-day count, and exclusion of a record from another year.
 - Service worker cache version is bumped from `time-tracker-v27` to `time-tracker-v28` so installed PWA clients can fetch the updated static assets.
 - This work is not merged or deployed yet; wait for PR browser tests before considering it complete. No storage key or data schema changes.
+
+
+## Annual summary post-merge update (2026-10-25)
+- PR #39 (annual planned-vs-actual summary) merged successfully via squash at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`.
+- The initial PR browser run failed because the new test expected `2시간` while the UI correctly rendered `2시간 0분`; the test expectation was corrected on the feature branch.
+- Follow-up GitHub Actions run [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) completed successfully. JavaScript syntax check and Playwright browser regression tests passed.
+- Confirmed `main` contains the annual-summary UI and service-worker cache version `time-tracker-v28`.
+- Public Pages deployment could not be independently verified in this session. Do not claim live deployment until an authoritative Pages workflow run or the live site confirms it.
+- No localStorage key/schema change, migration, or user-record deletion. Physical Android checks remain user-reported only; they were not independently performed by the assistant.
