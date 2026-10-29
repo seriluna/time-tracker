@@ -29,8 +29,8 @@ test('구조적으로 잘못된 할 일은 원본을 보존하고 안전 모드�
   await page.locator('.tools-menu summary').click();
 
   await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
-  await page.locator('#todoText').fill('잘못된 저장 데이터 위에 쓰기 시도');
   await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('잘못된 저장 데이터 위에 쓰기 시도');
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#todoForm button[type="submit"]').click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(raw);
