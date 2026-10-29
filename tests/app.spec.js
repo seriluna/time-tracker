@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
     if (message.type() === 'error') console.log('CONSOLE ERROR:', message.text());
   });
   await page.goto('/');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
 });
 
 
@@ -1307,4 +1308,87 @@ test('서로 맞닿는 시간 기록은 겹침으로 오인하지 않고 둘 다
     ['09:00', '10:00'],
     ['10:00', '11:00'],
   ]);
+});
+
+
+test('타임라인 +는 해당 시간대의 마지막 종료 시각부터 시작하고 종류 필터를 반영함', async ({ page }) => {
+  await page.locator('#day').fill('2026-10-29');
+  await page.locator('#name').fill('계획 6시');
+  await page.locator('#start').fill('06:00');
+  await page.locator('#end').fill('06:20');
+  await page.locator('#kind').selectOption('planned');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-timeline-filter="planned"]').click();
+  await page.locator('[data-add-hour="06"]').click();
+  await expect(page.locator('.timeline-quick-start')).toHaveValue('06:20');
+  await page.locator('.timeline-quick-name').fill('계획 이어서');
+  await page.locator('.timeline-quick-end').fill('06:40');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.timeline-quick-actions button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('계획 이어서');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.name === '계획 이어서').kind).toBe('planned');
+  expect(saved.entries.find(x => x.name === '계획 이어서').start).toBe('06:20');
+});
+
+test('전체 타임라인 +에서는 계획/실제를 선택할 수 있고 서로 다른 종류의 겹침은 허용함', async ({ page }) => {
+  await page.locator('#day').fill('2026-10-29');
+  await page.locator('#name').fill('실제 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#kind').selectOption('actual');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-timeline-filter="all"]').click();
+  await page.locator('[data-add-hour="09"]').click();
+  await expect(page.locator('.timeline-quick-kind')).toBeVisible();
+  await page.locator('.timeline-quick-name').fill('겹치는 계획');
+  await page.locator('.timeline-quick-kind').selectOption('planned');
+  await page.locator('.timeline-quick-start').fill('09:00');
+  await page.locator('.timeline-quick-end').fill('10:00');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.timeline-quick-actions button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('겹치는 계획');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.start === '09:00' && x.end === '10:00')).toHaveLength(2);
+});
+
+test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가 작동함', async ({ page }) => {
+  await page.locator('#todoText').fill('낮은 우선순위');
+  await page.locator('#todoImportance').selectOption('low');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await page.locator('#todoText').fill('중요한 할 일');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await expect(page.locator('#todos .todo').first()).toContainText('중요한 할 일');
+  await page.locator('[data-todo-edit]').first().click();
+  await page.locator('#todoText').fill('수정한 중요한 할 일');
+  await page.locator('#todoSubmit').click();
+  await expect(page.locator('#todos')).toContainText('수정한 중요한 할 일');
+  const high = page.locator('#todos .todo').filter({ hasText: '수정한 중요한 할 일' });
+  await high.locator('[data-check]').check();
+  await expect(high).toContainText('완료일');
+  await page.locator('[data-todo-filter="done"]').click();
+  await expect(page.locator('#todos')).toContainText('수정한 중요한 할 일');
+  await page.locator('[data-todo-filter="open"]').click();
+  await expect(page.locator('#todos')).toContainText('낮은 우선순위');
+  await expect(page.locator('#todos')).not.toContainText('수정한 중요한 할 일');
+});
+
+test('선택한 템플릿을 지정한 기간에 적용함', async ({ page }) => {
+  await page.locator('#templateName').fill('기간 템플릿');
+  await page.locator('#templateActivity').fill('운동 계획');
+  await page.locator('#templateStart').fill('07:00');
+  await page.locator('#templateEnd').fill('08:00');
+  await page.locator('#templateKind').selectOption('planned');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.locator('[data-template-check]').check();
+  await page.locator('#templateApplyStart').fill('2026-10-29');
+  await page.locator('#templateApplyEnd').fill('2026-10-30');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#batchTemplates').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.name === '운동 계획')).toHaveLength(2);
+  expect(saved.entries.filter(x => x.name === '운동 계획').map(x => x.date).sort()).toEqual(['2026-10-29','2026-10-30']);
 });
