@@ -1282,3 +1282,29 @@ test('기록 수정과 삭제 결과가 새로고침 후에도 유지됨', async
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.entries).toHaveLength(0);
 });
+
+
+test('서로 맞닿는 시간 기록은 겹침으로 오인하지 않고 둘 다 저장함', async ({ page }) => {
+  await page.locator('#name').fill('연속 기록 A');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('연속 기록 A');
+
+  await page.locator('#name').fill('연속 기록 B');
+  await page.locator('#start').fill('10:00');
+  await page.locator('#end').fill('11:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await expect(page.locator('#entries')).toContainText('연속 기록 A');
+  await expect(page.locator('#entries')).toContainText('연속 기록 B');
+  await expect(page.locator('#count')).toHaveText('2');
+  await expect(page.locator('#actual')).toHaveText('2시간 0분');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(2);
+  expect(saved.entries.map(entry => [entry.start, entry.end])).toEqual([
+    ['09:00', '10:00'],
+    ['10:00', '11:00'],
+  ]);
+});
