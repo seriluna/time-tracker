@@ -164,3 +164,16 @@
 - `tests/app.spec.js` contains 57 Playwright tests. These are automated browser checks, not direct live-site or physical Android verification.
 - Service-worker cache remains `time-tracker-v29`; PR #42 and #43 changed tests only. The app code, `time-tracker-v1` key, `{ entries: [], todos: [] }` schema, and user records were not modified by these PRs.
 - Live-site browser smoke test and independent physical Android checks remain outstanding. Prioritize hands-on core-flow verification before adding product features: add/edit/delete, date navigation, reload persistence, JSON backup/restore, and CSV export.
+
+
+## Latest verified state — 2026-10-29 (PR #46)
+
+- PR #46 merged into `main` at `0a3f2c2206739e593e4b4e3e29e95fcdb30b6253`: https://github.com/seriluna/time-tracker/pull/46
+- PR-head browser tests passed: 62/62, run [40824181340](https://github.com/seriluna/time-tracker/actions/runs/40824181340).
+- Post-merge main browser tests passed: 62/62, run [40824309625](https://github.com/seriluna/time-tracker/actions/runs/40824309625).
+- GitHub Pages build/deployment workflow succeeded: [40824309205](https://github.com/seriluna/time-tracker/actions/runs/40824309205).
+- Changes include Todo editing/priority/completion filters, time-entry start defaults, planned-vs-actual overlap rules, save feedback, collapsed advanced fields, date-range template application (up to 90 days), and service-worker cache-first response with background refresh.
+- Service-worker cache version is now `time-tracker-v30`.
+- Data safety: `time-tracker-v1` and `{ entries: [], todos: [] }` remain unchanged. Todo priority and completion date are optional fields; no user data was reset or migrated.
+- Verification limits: public-site manual smoke testing and physical Android startup-time measurements were not performed in this run. Automated browser tests and a successful Pages workflow do not substitute for those checks.
+- Next step: use the PR #46 checklist in `TESTING.md` for a real-device smoke check when a device is available. Do not add more features or claim startup performance improvement until the real behavior is verified.
