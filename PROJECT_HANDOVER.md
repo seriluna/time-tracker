@@ -21,7 +21,7 @@
 | `style.css` | 모바일 우선 레이아웃과 타임라인 스타일 |
 | `app.js` | 기록 CRUD, 시간 계산, localStorage, 타임라인 및 빠른 입력 |
 | `manifest.json` | PWA 이름·시작 경로·표시 모드 |
-| `sw.js` | 정적 파일 캐시 및 오프라인 fallback. 현재 캐시 버전은 `time-tracker-v29` |
+| `sw.js` | 정적 파일 캐시 및 오프라인 fallback. 현재 캐시 버전은 `time-tracker-v30` |
 | `icon.svg` | PWA 아이콘 |
 | `package.json` | Playwright 테스트 의존성 및 `npm test` |
 | `playwright.config.js` | 테스트 서버와 브라우저 설정 |
@@ -177,3 +177,14 @@
 - Data safety: `time-tracker-v1` and `{ entries: [], todos: [] }` remain unchanged. Todo priority and completion date are optional fields; no user data was reset or migrated.
 - Verification limits: public-site manual smoke testing and physical Android startup-time measurements were not performed in this run. Automated browser tests and a successful Pages workflow do not substitute for those checks.
 - Next step: use the PR #46 checklist in `TESTING.md` for a real-device smoke check when a device is available. Do not add more features or claim startup performance improvement until the real behavior is verified.
+
+
+## Latest verified state — 2026-10-29 (PR #47)
+- PR #47 merged documentation-only changes into `main` at `67a7722364144a36f1d2c099d6daae9528a99b29`.
+- Updated `TESTING.md` with PR #46 acceptance checks and `PROJECT_HANDOVER.md` with current verified status.
+- Post-merge browser regression workflow [40854024021](https://github.com/seriluna/time-tracker/actions/runs/40854024021) passed on the merge SHA.
+- GitHub Pages build/deployment workflow [40854023532](https://github.com/seriluna/time-tracker/actions/runs/40854023532) passed on the same merge SHA.
+- Current service-worker cache version is `time-tracker-v30`; this documentation correction does not change app code or cache behavior.
+- Existing `time-tracker-v1` key and `{ entries: [], todos: [] }` storage shape remain unchanged. No user data was accessed or modified.
+- Remaining verification: direct public-site interactive smoke test and physical Android PWA startup/offline/update checks were not performed by the assistant. Do not report these as complete.
+- Next priority: real-use core-flow verification; avoid new features until deployed CRUD, persistence, JSON backup/restore, and CSV export are confirmed.
