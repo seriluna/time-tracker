@@ -147,3 +147,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - This confirms the Pages deployment workflow succeeded. Direct independent inspection of the live site from this session was blocked, so do not claim a live browser smoke test was performed.
 - Existing `time-tracker-v1` key and `{ entries: [], todos: [] }` shape remain unchanged. No migration or live user-data modification occurred.
 - Next priority: validate deployed core flows on a real device or in a direct browser session (add/edit/delete, date navigation, reload persistence, JSON backup/restore, CSV export). Automated Playwright and viewport tests do not substitute for hands-on device testing.
+
+
+## Core record persistence tests — post-merge verification (2026-10-29)
+- PR #42 merged at `dd0308755b7b7a368400a99f8b7b7c12560829bf`, adding duplicate-ID JSON backup import rejection coverage. PR-head and post-merge browser workflows passed.
+- PR #43 merged at `e2d7c8ddbcadec8964a83414fb3650ed5d2b5eda`, adding a test that edits a record, reloads, deletes it, reloads again, and verifies persisted storage. PR-head browser test [40811050751](https://github.com/seriluna/time-tracker/actions/runs/40811050751) passed.
+- Post-merge main browser test [40811172475](https://github.com/seriluna/time-tracker/actions/runs/40811172475) passed; Pages build/deployment [40811172406](https://github.com/seriluna/time-tracker/actions/runs/40811172406) also passed all jobs at the same merge SHA.
+- Current automated browser suite contains 57 tests. Service-worker cache remains `time-tracker-v29`; PR #42 and #43 changed test code only. No app behavior, localStorage schema, or user data was changed.
+- Remaining validation is hands-on: verify the live site and, if available, a physical Android device for add/edit/delete, date switching, reload persistence, JSON backup/restore, and CSV export. Do not treat automated viewport tests or successful deployment workflow as a direct device/live-site smoke test.
