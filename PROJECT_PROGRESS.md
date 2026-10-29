@@ -138,8 +138,12 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Next priority: verify the core daily workflow on the deployed app (add, edit, delete, date navigation, reload persistence, JSON backup/restore, CSV export) and distinguish user-performed physical-device checks from automated browser coverage. Avoid adding another feature until this reliability/UX check is complete.
 
 
-## Structurally invalid local data protection (2026-10-29)
-- Identified a gap in the existing corruption guard: it rejected malformed JSON and missing top-level arrays, but accepted structurally invalid items inside `entries` or `todos`.
-- A focused PR now validates stored entry/todo shapes and duplicate top-level IDs before rendering. Invalid payloads enter the existing safe mode; the original `time-tracker-v1` raw value is preserved for download/recovery.
-- Added Playwright regression tests for invalid entry and Todo structures. Bumped the service-worker cache to `time-tracker-v29` so installed clients can fetch the updated app script.
-- Validation and deployment are pending the PR workflow. No live data was accessed or changed; localStorage key/schema remain unchanged.
+## Structurally invalid local data protection — post-merge verification (2026-10-29)
+- PR #40 merged to `main` at merge SHA `93ef1f8f891813924d894e8b78f960b927ea99f2`.
+- PR-head browser regression run [40804724089](https://github.com/seriluna/time-tracker/actions/runs/40804724089) passed, including JavaScript syntax and Playwright browser tests.
+- Post-merge main browser workflow [40806352881](https://github.com/seriluna/time-tracker/actions/runs/40806352881) completed successfully.
+- GitHub Pages build and deployment [40806352409](https://github.com/seriluna/time-tracker/actions/runs/40806352409) completed successfully for the merge SHA; build, report-build-status, and deploy jobs all passed.
+- Verified the `main` branch contains the stored-entry/Todo structural validator and service-worker cache `time-tracker-v29`.
+- This confirms the Pages deployment workflow succeeded. Direct independent inspection of the live site from this session was blocked, so do not claim a live browser smoke test was performed.
+- Existing `time-tracker-v1` key and `{ entries: [], todos: [] }` shape remain unchanged. No migration or live user-data modification occurred.
+- Next priority: validate deployed core flows on a real device or in a direct browser session (add/edit/delete, date navigation, reload persistence, JSON backup/restore, CSV export). Automated Playwright and viewport tests do not substitute for hands-on device testing.
