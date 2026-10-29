@@ -1,7 +1,7 @@
 # Time Tracker — Project Handover
 
 > 목적: 이 문서만으로도 새 대화창이나 다른 개발자가 프로젝트의 목적, 현재 상태, 제약, 다음 작업을 이해하고 안전하게 이어갈 수 있도록 합니다.
-> 마지막 확인 기준: 2026-10-13 (대화에서 확인한 GitHub 저장소 상태 기준)
+> 마지막 확인 기준: 2026-10-29 (PR #43 병합 후 main 브랜치 및 GitHub Actions 확인)
 
 ## 1. 프로젝트 개요
 
@@ -154,3 +154,13 @@
 - Service-worker cache is `time-tracker-v29`. Existing key `time-tracker-v1` and schema `{ entries: [], todos: [] }` are unchanged.
 - No live user data was accessed or modified. A direct live-site browser smoke test and physical Android checks were not performed in this session.
 - Next task: prioritize hands-on core-flow verification on the deployed app over new features. Check add/edit/delete, date switching, reload persistence, JSON backup/restore, and CSV export; record which checks were automated vs. physically performed.
+
+
+## Latest verified state — 2026-10-29 (PR #42–#43)
+- PR #42 merged at `dd0308755b7b7a368400a99f8b7b7c12560829bf`; added a regression test rejecting JSON backups with duplicate IDs across entries and Todos while preserving existing records and raw `localStorage` data.
+- PR #43 merged at `e2d7c8ddbcadec8964a83414fb3650ed5d2b5eda`; added a regression test verifying entry edits and deletions remain correct after reload.
+- Post-merge main browser regression workflow [40811172475](https://github.com/seriluna/time-tracker/actions/runs/40811172475) succeeded at the PR #43 merge SHA.
+- GitHub Pages build and deployment workflow [40811172406](https://github.com/seriluna/time-tracker/actions/runs/40811172406) succeeded at the same merge SHA; build, deploy, and status-report jobs passed.
+- `tests/app.spec.js` contains 57 Playwright tests. These are automated browser checks, not direct live-site or physical Android verification.
+- Service-worker cache remains `time-tracker-v29`; PR #42 and #43 changed tests only. The app code, `time-tracker-v1` key, `{ entries: [], todos: [] }` schema, and user records were not modified by these PRs.
+- Live-site browser smoke test and independent physical Android checks remain outstanding. Prioritize hands-on core-flow verification before adding product features: add/edit/delete, date navigation, reload persistence, JSON backup/restore, and CSV export.
