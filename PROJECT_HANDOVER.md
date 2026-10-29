@@ -128,3 +128,11 @@
 - Confirmed the `main` branch contains the annual summary markup and `time-tracker-v28` service-worker cache version.
 - Live GitHub Pages deployment was not independently verified; check the Pages workflow run or public site before claiming deployment complete.
 - No storage key/schema migration or user data deletion occurred. Physical Android checks are not independently verified; distinguish user-reported checks from assistant-performed tests.
+
+
+## Live annual-summary confirmation (2026-10-29)
+- User confirmed that the public Time Tracker site shows the annual summary: https://seriluna.github.io/time-tracker/.
+- This is direct user confirmation of visible live UI, not an independently observed browser session or a Pages workflow-to-SHA verification.
+- PR #39 remains merged at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`; browser regression run [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) passed.
+- Storage key `time-tracker-v1` and data shape `{ entries: [], todos: [] }` remain unchanged; no migration or deletion occurred.
+- Next step: prioritize deployed core-flow reliability validation over new feature work: add/edit/delete records, switch dates, reload and confirm persistence, then test JSON backup/restore and CSV export. Record physical-device checks as user-reported unless directly witnessed; automated viewport tests are not a physical-device substitute.
