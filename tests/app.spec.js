@@ -1257,3 +1257,28 @@ test('중복 ID가 포함된 JSON 백업은 거부하고 기존 기록과 할 �
   await expect(page.locator('#todos')).not.toContainText('복원되면 안 되는 할 일');
   await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(originalRaw);
 });
+
+
+test('기록 수정과 삭제 결과가 새로고침 후에도 유지됨', async ({ page }) => {
+  await page.locator('#name').fill('수정 전 기록');
+  await page.locator('#start').fill('14:00');
+  await page.locator('#end').fill('15:00');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  await page.locator('[data-timeline-entry]').filter({ hasText: '수정 전 기록' }).click();
+  await page.locator('#name').fill('수정 후 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.reload();
+
+  await expect(page.locator('#entries')).toContainText('수정 후 기록');
+  await expect(page.locator('#entries')).not.toContainText('수정 전 기록');
+  await expect(page.locator('#count')).toHaveText('1');
+
+  await page.locator('[data-del]').click();
+  await page.reload();
+
+  await expect(page.locator('#entries')).not.toContainText('수정 후 기록');
+  await expect(page.locator('#count')).toHaveText('0');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries).toHaveLength(0);
+});
