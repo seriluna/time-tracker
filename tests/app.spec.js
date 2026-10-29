@@ -1377,6 +1377,7 @@ test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가
 });
 
 test('선택한 템플릿을 지정한 기간에 적용함', async ({ page }) => {
+  await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
   await page.locator('#templateName').fill('기간 템플릿');
   await page.locator('#templateActivity').fill('운동 계획');
   await page.locator('#templateStart').fill('07:00');
