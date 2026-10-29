@@ -1212,3 +1212,46 @@ test('연간 요약은 선택한 연도의 월별 계획·실제 시간과 기�
   await expect(yearly.locator('.periodrow').nth(2)).toContainText('계획 1시간 30분 · 실제 1시간 0분 · 67%');
   await expect(yearly).not.toContainText('10시간');
 });
+
+
+test('중복 ID가 포함된 JSON 백업은 거부하고 기존 기록과 할 일을 유지함', async ({ page }) => {
+  await page.locator('#name').fill('중복 ID 테스트 전 기존 기록');
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('#todoText').fill('중복 ID 테스트 전 기존 할 일');
+  await page.locator('#todoForm button[type="submit"]').click();
+
+  const originalRaw = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  const date = await page.locator('#day').inputValue();
+  const backup = {
+    entries: [{
+      id: 'duplicate-backup-id',
+      date,
+      name: '복원되면 안 되는 기록',
+      start: '13:00',
+      end: '14:00',
+      kind: 'actual',
+      cat: '',
+      note: '',
+    }],
+    todos: [{
+      id: 'duplicate-backup-id',
+      date,
+      text: '복원되면 안 되는 할 일',
+      done: false,
+    }],
+  };
+
+  await page.locator('.tools-menu').locator('summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'duplicate-id-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect(page.locator('#entries')).toContainText('중복 ID 테스트 전 기존 기록');
+  await expect(page.locator('#entries')).not.toContainText('복원되면 안 되는 기록');
+  await expect(page.locator('#todos')).toContainText('중복 ID 테스트 전 기존 할 일');
+  await expect(page.locator('#todos')).not.toContainText('복원되면 안 되는 할 일');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(originalRaw);
+});
