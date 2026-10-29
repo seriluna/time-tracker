@@ -31,3 +31,20 @@ body{max-width:900px;padding:14px 12px 40px}
 
 /* Backup tools: prioritize CSV export and keep actions easy to tap on mobile. */
 .csv-range>b,.csv-range>p:first-of-type{grid-column:1/-1}.csv-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px}.csv-actions button{width:100%;font-size:13px;padding:10px}.csv-range>#selectAllCsvRange{grid-column:1/-1;background:#fff;border-style:dashed}.csv-range #csvRangeStatus{grid-column:1/-1;overflow-wrap:anywhere}.backup-actions{display:grid;grid-template-columns:1fr 1fr;margin:10px 0}.backup-actions button{font-size:13px;padding:10px;white-space:normal}.auto-backup-panel{margin-top:10px}@media(max-width:380px){.csv-actions,.backup-actions{grid-template-columns:1fr}}
+
+/* User-requested Todo and quick-entry refinements */
+.todo-filters{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.todo-filters button{padding:8px 10px;font-size:12px}
+.todo-meta,.todo-completed-date{display:block;font-size:11px;color:#737b90;margin-top:4px}
+.todo-completed-date{color:#25734b;font-weight:600}
+#todoForm select{min-width:0;max-width:125px}
+#todoForm button{white-space:nowrap}
+.entry-advanced{border:1px solid #e0e4ed;border-radius:10px;background:#fff}
+.entry-advanced>summary{cursor:pointer;padding:11px;font-size:13px;font-weight:600;list-style:none}
+.entry-advanced>summary::-webkit-details-marker{display:none}
+.entry-advanced>summary:after{content:"＋";float:right;color:#5059a8}
+.entry-advanced[open]>summary:after{content:"−"}
+.entry-advanced-content{padding:0 10px 10px;display:grid;gap:10px}
+.timeline-quick-kind-label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;font-size:12px}
+.timeline-quick-kind{min-width:0;padding:8px}
+@media(max-width:480px){#todoForm{flex-wrap:wrap}#todoForm input{flex-basis:100%}#todoForm select{flex:1;max-width:none}#todoForm button{flex:1}.todo{flex-wrap:wrap}.todo label{min-width:120px}.todo-subtasks{flex-basis:100%}}
