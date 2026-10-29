@@ -9,6 +9,34 @@ test.beforeEach(async ({ page }) => {
 });
 
 
+test('구조적으로 잘못된 시간 기록은 원본을 보존하고 안전 모드로 전환함', async ({ page }) => {
+  const raw = JSON.stringify({ entries: [null], todos: [] });
+  await page.evaluate(value => localStorage.setItem('time-tracker-v1', value), raw);
+  await page.reload();
+  await page.locator('.tools-menu summary').click();
+
+  await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
+  await page.locator('#name').fill('잘못된 저장 데이터 위에 쓰기 시도');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(raw);
+});
+
+test('구조적으로 잘못된 할 일은 원본을 보존하고 안전 모드로 전환함', async ({ page }) => {
+  const raw = JSON.stringify({ entries: [], todos: [{ id: 'bad-todo', date: '2026-10-29', text: '잘못된 할 일', done: '아니오' }] });
+  await page.evaluate(value => localStorage.setItem('time-tracker-v1', value), raw);
+  await page.reload();
+  await page.locator('.tools-menu summary').click();
+
+  await expect(page.locator('#storageHealthStatus')).toContainText('읽기 전용 안전 모드');
+  await page.locator('#todoText').fill('잘못된 저장 데이터 위에 쓰기 시도');
+  await page.locator('[data-tab="todo"]').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#todoForm button[type="submit"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(raw);
+});
+
+
 test('손상된 기존 저장 데이터는 덮어쓰지 않고 안전한 백업 복원을 허용함', async ({ page }) => {
   const corruptRaw = '{"entries":[';
   await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), corruptRaw);
