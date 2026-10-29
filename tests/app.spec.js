@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
     if (message.type() === 'error') console.log('CONSOLE ERROR:', message.text());
   });
   await page.goto('/');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
 });
 
 
@@ -240,12 +241,14 @@ test('계획 시간과 실제 시간이 따로 합산됨', async ({ page }) => {
   await page.locator('#name').fill('실제 업무');
   await page.locator('#start').fill('09:00');
   await page.locator('#end').fill('10:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
   await page.locator('#entryForm button[type="submit"]').click();
 
   await page.locator('#name').fill('계획 업무');
   await page.locator('#start').fill('10:00');
   await page.locator('#end').fill('11:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#entryForm button[type="submit"]').click();
 
@@ -712,12 +715,14 @@ test('날짜를 바꾸면 해당 날짜 기록을 기준으로 새 기록 시간
 
 test('실제 기록의 기본 시간은 계획 기록과 겹쳐도 허용되는 종류별 규칙을 따름', async ({ page }) => {
   await page.locator('#name').fill('계획 기록');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#start').fill('09:00');
   await page.locator('#end').fill('10:00');
   await page.locator('#entryForm button[type="submit"]').click();
 
   await page.locator('#name').fill('실제 기록');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
   await expect(page.locator('#start')).toHaveValue('09:00');
   await expect(page.locator('#end')).toHaveValue('10:00');
@@ -755,12 +760,14 @@ test('24시간 타임라인은 분 단위 실제/계획 구간과 합계를 표�
   await page.locator('#name').fill('실제 25분');
   await page.locator('#start').fill('09:15');
   await page.locator('#end').fill('09:40');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
   await page.locator('#entryForm button[type="submit"]').click();
 
   await page.locator('#name').fill('계획 30분');
   await page.locator('#start').fill('09:45');
   await page.locator('#end').fill('10:15');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#entryForm button[type="submit"]').click();
 
@@ -779,12 +786,14 @@ test('타임라인 필터는 실제/계획 구간을 구분하고 전체 합계�
   await page.locator('#name').fill('필터 실제 기록');
   await page.locator('#start').fill('09:10');
   await page.locator('#end').fill('09:30');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
   await page.locator('#entryForm button[type="submit"]').click();
 
   await page.locator('#name').fill('필터 계획 기록');
   await page.locator('#start').fill('09:40');
   await page.locator('#end').fill('10:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#entryForm button[type="submit"]').click();
 
@@ -810,6 +819,7 @@ test('날짜 기록 복사 후 다른 날짜에 붙여넣으면 종류·분류·
   await page.locator('#name').fill('복사할 운동');
   await page.locator('#start').fill('09:00');
   await page.locator('#end').fill('10:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#cat').fill('건강');
   await page.locator('#note').fill('테스트 메모');
@@ -953,6 +963,7 @@ test('주간·월간 분류 분석은 해당 기간의 계획과 실제 시간�
   await page.locator('#name').fill('운동 실제');
   await page.locator('#start').fill('09:00');
   await page.locator('#end').fill('10:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
   await page.locator('#cat').fill('운동');
   await page.locator('#entryForm button[type="submit"]').click();
@@ -960,6 +971,7 @@ test('주간·월간 분류 분석은 해당 기간의 계획과 실제 시간�
   await page.locator('#name').fill('업무 계획');
   await page.locator('#start').fill('10:00');
   await page.locator('#end').fill('10:30');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#cat').fill('업무');
   await page.locator('#entryForm button[type="submit"]').click();
@@ -1064,6 +1076,7 @@ test('반복 일정 생성 시 기존 계획과 시간이 겹치면 기존 데�
   await page.locator('#name').fill('기존 계획');
   await page.locator('#start').fill('07:00');
   await page.locator('#end').fill('08:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('planned');
   await page.locator('#entryForm button[type="submit"]').click();
   await expect(page.locator('#entries')).toContainText('기존 계획');
@@ -1307,4 +1320,91 @@ test('서로 맞닿는 시간 기록은 겹침으로 오인하지 않고 둘 다
     ['09:00', '10:00'],
     ['10:00', '11:00'],
   ]);
+});
+
+
+test('타임라인 +는 해당 시간대의 마지막 종료 시각부터 시작하고 종류 필터를 반영함', async ({ page }) => {
+  await page.locator('#day').fill('2026-10-29');
+  await page.locator('#name').fill('계획 6시');
+  await page.locator('#start').fill('06:00');
+  await page.locator('#end').fill('06:20');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
+  await page.locator('#kind').selectOption('planned');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-timeline-filter="planned"]').click();
+  await page.locator('[data-add-hour="06"]').click();
+  await expect(page.locator('.timeline-quick-start')).toHaveValue('06:20');
+  await page.locator('.timeline-quick-name').fill('계획 이어서');
+  await page.locator('.timeline-quick-end').fill('06:40');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.timeline-quick-actions button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('계획 이어서');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.name === '계획 이어서').kind).toBe('planned');
+  expect(saved.entries.find(x => x.name === '계획 이어서').start).toBe('06:20');
+});
+
+test('전체 타임라인 +에서는 계획/실제를 선택할 수 있고 서로 다른 종류의 겹침은 허용함', async ({ page }) => {
+  await page.locator('#day').fill('2026-10-29');
+  await page.locator('#name').fill('실제 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('10:00');
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
+  await page.locator('#kind').selectOption('actual');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-timeline-filter="all"]').click();
+  await page.locator('[data-add-hour="09"]').click();
+  await expect(page.locator('.timeline-quick-kind')).toBeVisible();
+  await page.locator('.timeline-quick-name').fill('겹치는 계획');
+  await page.locator('.timeline-quick-kind').selectOption('planned');
+  await page.locator('.timeline-quick-start').fill('09:00');
+  await page.locator('.timeline-quick-end').fill('10:00');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.timeline-quick-actions button[type="submit"]').click();
+  await expect(page.locator('#entries')).toContainText('겹치는 계획');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.start === '09:00' && x.end === '10:00')).toHaveLength(2);
+});
+
+test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가 작동함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('낮은 우선순위');
+  await page.locator('#todoImportance').selectOption('low');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await page.locator('#todoText').fill('중요한 할 일');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await expect(page.locator('#todos .todo').first()).toContainText('중요한 할 일');
+  await page.locator('[data-todo-edit]').first().click();
+  await page.locator('#todoText').fill('수정한 중요한 할 일');
+  await page.locator('#todoSubmit').click();
+  await expect(page.locator('#todos')).toContainText('수정한 중요한 할 일');
+  const high = page.locator('#todos .todo').filter({ hasText: '수정한 중요한 할 일' });
+  await high.locator('[data-check]').check();
+  await expect(high).toContainText('완료일');
+  await page.locator('[data-todo-filter="done"]').click();
+  await expect(page.locator('#todos')).toContainText('수정한 중요한 할 일');
+  await page.locator('[data-todo-filter="open"]').click();
+  await expect(page.locator('#todos')).toContainText('낮은 우선순위');
+  await expect(page.locator('#todos')).not.toContainText('수정한 중요한 할 일');
+});
+
+test('선택한 템플릿을 지정한 기간에 적용함', async ({ page }) => {
+  await page.locator('.advanced-panel').evaluate(el => { el.open = true; });
+  await page.locator('#templateName').fill('기간 템플릿');
+  await page.locator('#templateActivity').fill('운동 계획');
+  await page.locator('#templateStart').fill('07:00');
+  await page.locator('#templateEnd').fill('08:00');
+  await page.locator('#templateKind').selectOption('planned');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.locator('[data-template-check]').check();
+  await page.locator('#templateApplyStart').fill('2026-10-29');
+  await page.locator('#templateApplyEnd').fill('2026-10-30');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#batchTemplates').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.name === '운동 계획')).toHaveLength(2);
+  expect(saved.entries.filter(x => x.name === '운동 계획').map(x => x.date).sort()).toEqual(['2026-10-29','2026-10-30']);
 });
