@@ -1217,6 +1217,8 @@ test('연간 요약은 선택한 연도의 월별 계획·실제 시간과 기�
 test('중복 ID가 포함된 JSON 백업은 거부하고 기존 기록과 할 일을 유지함', async ({ page }) => {
   await page.locator('#name').fill('중복 ID 테스트 전 기존 기록');
   await page.locator('#entryForm button[type="submit"]').click();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoPanel')).toBeVisible();
   await page.locator('#todoText').fill('중복 ID 테스트 전 기존 할 일');
   await page.locator('#todoForm button[type="submit"]').click();
 
