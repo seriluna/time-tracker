@@ -136,3 +136,10 @@
 - PR #39 remains merged at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`; browser regression run [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) passed.
 - Storage key `time-tracker-v1` and data shape `{ entries: [], todos: [] }` remain unchanged; no migration or deletion occurred.
 - Next step: prioritize deployed core-flow reliability validation over new feature work: add/edit/delete records, switch dates, reload and confirm persistence, then test JSON backup/restore and CSV export. Record physical-device checks as user-reported unless directly witnessed; automated viewport tests are not a physical-device substitute.
+
+
+## Structural storage validation follow-up (2026-10-29)
+- New PR: structurally invalid localStorage records are rejected before rendering, including invalid entry/Todo shapes and duplicate top-level IDs. Existing safe mode keeps the raw original available for download and blocks normal writes.
+- Regression tests cover malformed entry and Todo objects; service-worker cache is bumped to `time-tracker-v29`.
+- Do not merge until PR browser tests pass. No migration, storage key change, or live user data modification.
+- After merge, confirm the deployed app and prioritize remaining real-device core-flow checks rather than adding unrelated features.
