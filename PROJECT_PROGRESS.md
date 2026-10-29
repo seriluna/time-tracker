@@ -128,3 +128,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Confirmed `main` contains the annual-summary UI and service-worker cache version `time-tracker-v28`.
 - Public Pages deployment could not be independently verified in this session. Do not claim live deployment until an authoritative Pages workflow run or the live site confirms it.
 - No localStorage key/schema change, migration, or user-record deletion. Physical Android checks remain user-reported only; they were not independently performed by the assistant.
+
+
+## Live annual-summary confirmation (2026-10-29)
+- User opened the public site and confirmed that the annual summary is visible at https://seriluna.github.io/time-tracker/.
+- Treat this as user-confirmed live UI visibility. It confirms the deployed page includes the annual summary, but does not independently verify every asset/cache state or the precise Pages workflow commit SHA.
+- PR #39 browser regression run [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) passed. The feature is merged to main at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`; documentation commits followed.
+- No storage schema change or data migration was made.
+- Next priority: verify the core daily workflow on the deployed app (add, edit, delete, date navigation, reload persistence, JSON backup/restore, CSV export) and distinguish user-performed physical-device checks from automated browser coverage. Avoid adding another feature until this reliability/UX check is complete.
