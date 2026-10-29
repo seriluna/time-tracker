@@ -136,3 +136,10 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - PR #39 browser regression run [40203257295](https://github.com/seriluna/time-tracker/actions/runs/40203257295) passed. The feature is merged to main at `50e6a532beb8e4fe164fe3b15659654e52b8dbee`; documentation commits followed.
 - No storage schema change or data migration was made.
 - Next priority: verify the core daily workflow on the deployed app (add, edit, delete, date navigation, reload persistence, JSON backup/restore, CSV export) and distinguish user-performed physical-device checks from automated browser coverage. Avoid adding another feature until this reliability/UX check is complete.
+
+
+## Structurally invalid local data protection (2026-10-29)
+- Identified a gap in the existing corruption guard: it rejected malformed JSON and missing top-level arrays, but accepted structurally invalid items inside `entries` or `todos`.
+- A focused PR now validates stored entry/todo shapes and duplicate top-level IDs before rendering. Invalid payloads enter the existing safe mode; the original `time-tracker-v1` raw value is preserved for download/recovery.
+- Added Playwright regression tests for invalid entry and Todo structures. Bumped the service-worker cache to `time-tracker-v29` so installed clients can fetch the updated app script.
+- Validation and deployment are pending the PR workflow. No live data was accessed or changed; localStorage key/schema remain unchanged.
