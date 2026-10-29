@@ -21,7 +21,7 @@
 | `style.css` | 모바일 우선 레이아웃과 타임라인 스타일 |
 | `app.js` | 기록 CRUD, 시간 계산, localStorage, 타임라인 및 빠른 입력 |
 | `manifest.json` | PWA 이름·시작 경로·표시 모드 |
-| `sw.js` | 정적 파일 캐시 및 오프라인 fallback. 현재 캐시 버전은 `time-tracker-v25` |
+| `sw.js` | 정적 파일 캐시 및 오프라인 fallback. 현재 캐시 버전은 `time-tracker-v29` |
 | `icon.svg` | PWA 아이콘 |
 | `package.json` | Playwright 테스트 의존성 및 `npm test` |
 | `playwright.config.js` | 테스트 서버와 브라우저 설정 |
@@ -143,3 +143,14 @@
 - Regression tests cover malformed entry and Todo objects; service-worker cache is bumped to `time-tracker-v29`.
 - Do not merge until PR browser tests pass. No migration, storage key change, or live user data modification.
 - After merge, confirm the deployed app and prioritize remaining real-device core-flow checks rather than adding unrelated features.
+
+
+## Latest verified state — 2026-10-29 (PR #40)
+- PR #40 (`fix: protect structurally invalid local records`) merged to `main` at `93ef1f8f891813924d894e8b78f960b927ea99f2`.
+- Browser regression workflow [40804724089](https://github.com/seriluna/time-tracker/actions/runs/40804724089) passed on the PR head.
+- Post-merge browser workflow [40806352881](https://github.com/seriluna/time-tracker/actions/runs/40806352881) completed successfully.
+- GitHub Pages build/deployment [40806352409](https://github.com/seriluna/time-tracker/actions/runs/40806352409) completed successfully for the merge SHA; all three jobs passed.
+- Main now validates individual stored entry and Todo shapes and duplicate top-level IDs before rendering. Invalid data enters safe mode and preserves the exact raw localStorage payload for recovery.
+- Service-worker cache is `time-tracker-v29`. Existing key `time-tracker-v1` and schema `{ entries: [], todos: [] }` are unchanged.
+- No live user data was accessed or modified. A direct live-site browser smoke test and physical Android checks were not performed in this session.
+- Next task: prioritize hands-on core-flow verification on the deployed app over new features. Check add/edit/delete, date switching, reload persistence, JSON backup/restore, and CSV export; record which checks were automated vs. physically performed.
