@@ -1438,7 +1438,7 @@ test('할 일 완료·미완료 전체를 목록 또는 날짜별로 보고 수�
   await expect(page.locator('#todos')).toContainText('할 일 날짜 2026-10-29');
   await expect(page.locator('#todos')).toContainText('할 일 날짜 2026-10-25');
   await expect(page.locator('#todos')).toContainText('미완료 최근');
-  await expect(page.locator('#todos')).not.toContainText('완료 최근');
+  await expect(page.locator('#todos .todo label').filter({ hasText: /^완료 최근/ })).toHaveCount(0);
 
   await page.locator('[data-todo-view="list"]').click();
   await expect(page.locator('#todos .todo-date-group')).toHaveCount(0);
