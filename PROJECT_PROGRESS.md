@@ -165,3 +165,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Service-worker cache version bumped from v30 to v31 for installed PWA asset refresh.
 - Data safety: no localStorage key or data-shape change; existing records and completion dates remain untouched. This is a rendering-only enhancement.
 - Status at branch creation: implementation and regression coverage prepared; not complete until CI passes and the PR is reviewed. No deployment claim before merge and Pages workflow verification.
+
+
+### CI finding and test correction (2026-10-30)
+- First PR browser run 41026639119 completed with 62 passing tests and one failing new assertion.
+- The failure was in the new test's negative text assertion: checking that the list did not contain '완료 최근' also matched the substring inside '미완료 최근'. The rendered Todo filter/group output showed the expected two incomplete Todos and no completed Todo.
+- Corrected the test to target a Todo label beginning with the exact completed-item title rather than a substring of the entire list.
+- The corrected test commit is 3a2e65de017cae539054b2f6067f59ac931eb428.
+- A workflow run for the corrected head SHA has not yet been confirmed; do not treat the PR as passing until it succeeds.
