@@ -155,3 +155,13 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Post-merge main browser test [40811172475](https://github.com/seriluna/time-tracker/actions/runs/40811172475) passed; Pages build/deployment [40811172406](https://github.com/seriluna/time-tracker/actions/runs/40811172406) also passed all jobs at the same merge SHA.
 - Current automated browser suite contains 57 tests. Service-worker cache remains `time-tracker-v29`; PR #42 and #43 changed test code only. No app behavior, localStorage schema, or user data was changed.
 - Remaining validation is hands-on: verify the live site and, if available, a physical Android device for add/edit/delete, date switching, reload persistence, JSON backup/restore, and CSV export. Do not treat automated viewport tests or successful deployment workflow as a direct device/live-site smoke test.
+
+
+## Todo view and action-button alignment (2026-10-30)
+- User requested identical Todo edit/delete button dimensions and the ability to view all completed or all incomplete Todos either as a flat list or grouped by date.
+- Main was reconciled against GitHub before changes: \`28fdf1b468e1fdb97a95db11678b89bc1207cb35\`; existing open PR #14 is an old unrelated documentation branch and was not modified.
+- Implementation on this feature branch: add list/date view controls; group completed Todos by completion date (\`doneAt\`, falling back to the stored Todo date for legacy records) and incomplete Todos by their stored Todo date; retain current/completed/incomplete filters; apply identical fixed dimensions to edit/delete buttons.
+- Added Playwright coverage for completed/incomplete filters, date grouping, list-mode switching, and matching action-button dimensions.
+- Service-worker cache version bumped from v30 to v31 for installed PWA asset refresh.
+- Data safety: no localStorage key or data-shape change; existing records and completion dates remain untouched. This is a rendering-only enhancement.
+- Status at branch creation: implementation and regression coverage prepared; not complete until CI passes and the PR is reviewed. No deployment claim before merge and Pages workflow verification.
