@@ -48,3 +48,6 @@ body{max-width:900px;padding:14px 12px 40px}
 .timeline-quick-kind-label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;font-size:12px}
 .timeline-quick-kind{min-width:0;padding:8px}
 @media(max-width:480px){#todoForm{flex-wrap:wrap}#todoForm input{flex-basis:100%}#todoForm select{flex:1;max-width:none}#todoForm button{flex:1}.todo{flex-wrap:wrap}.todo label{min-width:120px}.todo-subtasks{flex-basis:100%}}
+
+/* Todo list view: aligned actions and optional date grouping. */
+.todo-view-modes{display:flex;gap:6px;margin:0 0 10px}.todo-view-modes button{padding:7px 11px;font-size:12px}.todo-action{flex:0 0 56px;width:56px;height:36px;min-height:36px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;white-space:nowrap}.todo-date-group{display:grid;gap:8px}.todo-date-group+.todo-date-group{margin-top:12px}.todo-date-group>h3{margin:8px 2px 0;font-size:13px;color:#606781}

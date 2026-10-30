@@ -1408,3 +1408,45 @@ test('선택한 템플릿을 지정한 기간에 적용함', async ({ page }) =>
   expect(saved.entries.filter(x => x.name === '운동 계획')).toHaveLength(2);
   expect(saved.entries.filter(x => x.name === '운동 계획').map(x => x.date).sort()).toEqual(['2026-10-29','2026-10-30']);
 });
+
+
+test('할 일 완료·미완료 전체를 목록 또는 날짜별로 보고 수정·삭제 버튼 크기가 같음', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [],
+      todos: [
+        { id: 'done-older', date: '2026-10-25', text: '완료 과거', done: true, doneAt: '2026-10-28', importance: 'high' },
+        { id: 'done-newer', date: '2026-10-26', text: '완료 최근', done: true, doneAt: '2026-10-29', importance: 'medium' },
+        { id: 'open-older', date: '2026-10-25', text: '미완료 과거', done: false, importance: 'high' },
+        { id: 'open-newer', date: '2026-10-29', text: '미완료 최근', done: false, importance: 'low' }
+      ]
+    }));
+  });
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await page.locator('[data-todo-filter="done"]').click();
+  await page.locator('[data-todo-view="date"]').click();
+  await expect(page.locator('#todos .todo-date-group')).toHaveCount(2);
+  await expect(page.locator('#todos')).toContainText('완료일 2026-10-29');
+  await expect(page.locator('#todos')).toContainText('완료일 2026-10-28');
+  await expect(page.locator('#todos')).toContainText('완료 최근');
+  await expect(page.locator('#todos')).not.toContainText('미완료 최근');
+
+  await page.locator('[data-todo-filter="open"]').click();
+  await expect(page.locator('#todos .todo-date-group')).toHaveCount(2);
+  await expect(page.locator('#todos')).toContainText('할 일 날짜 2026-10-29');
+  await expect(page.locator('#todos')).toContainText('할 일 날짜 2026-10-25');
+  await expect(page.locator('#todos')).toContainText('미완료 최근');
+  await expect(page.locator('#todos .todo label').filter({ hasText: /^완료 최근/ })).toHaveCount(0);
+
+  await page.locator('[data-todo-view="list"]').click();
+  await expect(page.locator('#todos .todo-date-group')).toHaveCount(0);
+  const sizes = await page.locator('#todos .todo').first().evaluate(el => {
+    const edit = el.querySelector('[data-todo-edit]').getBoundingClientRect();
+    const del = el.querySelector('[data-todo-del]').getBoundingClientRect();
+    return { editWidth: edit.width, deleteWidth: del.width, editHeight: edit.height, deleteHeight: del.height };
+  });
+  expect(sizes.editWidth).toBe(sizes.deleteWidth);
+  expect(sizes.editHeight).toBe(sizes.deleteHeight);
+});
