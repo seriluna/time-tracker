@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),KEY='time-tracker-v1',GOAL_KEY='time-tracker-daily-goal',WEEK_GOAL_KEY='time-tracker-week-goal',MONTH_GOAL_KEY='time-tracker-month-goal',TEMPLATE_KEY='time-tracker-templates',UNDO_KEY='time-tracker-undo-v1',TODO_CATEGORY_KEY='time-tracker-todo-category';
-let editId=null,editTodoId=null,todoFilter='all',selectedEntryIds=new Set(),copiedDayEntries=[],timelineFilter='all',s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
+let editId=null,editTodoId=null,todoFilter='all',todoView='list',selectedEntryIds=new Set(),copiedDayEntries=[],timelineFilter='all',s,goal=Number(localStorage.getItem(GOAL_KEY))||8,weekGoal=Number(localStorage.getItem(WEEK_GOAL_KEY))||40,monthGoal=Number(localStorage.getItem(MONTH_GOAL_KEY))||160;
 let dataLoadError=false,corruptedRaw=null;
 const initialStoredRaw=localStorage.getItem(KEY);
 if(initialStoredRaw===null){s={entries:[],todos:[]}}
@@ -113,9 +113,17 @@ function render(){
  $('selectAllEntries').checked=es.length>0&&es.every(x=>selectedEntryIds.has(x.id));
  const importanceRank={high:0,medium:1,low:2};
  const todoSource=todoFilter==='done'?s.todos.filter(t=>t.done):todoFilter==='open'?s.todos.filter(t=>!t.done):s.todos.filter(t=>t.date===date||(!t.done&&t.date<date));
- const ts=todoSource.slice().sort((a,b)=>(importanceRank[a.importance]??1)-(importanceRank[b.importance]??1)||a.date.localeCompare(b.date)||a.text.localeCompare(b.text));
- $('todos').innerHTML=ts.length?ts.map(t=>{const overdue=t.date<date&&!t.done,category=t.category==='work'?'업무':t.category==='personal'?'개인':'분류 없음',importance=t.importance==='high'?'높음':t.importance==='low'?'낮음':'보통',subtasks=Array.isArray(t.subtasks)?t.subtasks:[];return '<div class="todo '+(t.done?'done':'')+(overdue?' overdue':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+'<small class="todo-meta">중요도 '+importance+' · '+category+' · 등록 '+esc(t.date)+'</small>'+(t.done?'<small class="todo-completed-date">완료일 '+esc(t.doneAt||'날짜 정보 없음')+'</small>':'')+(overdue?'<small class="todo-due">미완료 · 원래 날짜 '+esc(t.date)+'</small>':'')+'</label><button type="button" data-todo-edit="'+esc(t.id)+'">수정</button><button type="button" class="delete" data-todo-del="'+esc(t.id)+'">삭제</button><details class="todo-subtasks"><summary>하위 작업 ('+subtasks.length+')</summary><div class="todo-subtask-list">'+subtasks.map(x=>'<label class="todo-subtask '+(x.done?'done':'')+'"><input type="checkbox" data-subtask-check="'+esc(t.id)+'|'+esc(x.id)+'" '+(x.done?'checked':'')+'><span>'+esc(x.text)+'</span></label>').join('')+'</div><div class="todo-subtask-add"><input maxlength="120" data-subtask-input="'+esc(t.id)+'" placeholder="하위 작업 추가"><button type="button" data-subtask-add="'+esc(t.id)+'">추가</button></div></details></div>'}).join(''):'<p class="muted">할 일이 없습니다.</p>';
+ const sortTodos=(items)=>items.slice().sort((a,b)=>(importanceRank[a.importance]??1)-(importanceRank[b.importance]??1)||a.text.localeCompare(b.text));
+ const renderTodoItem=t=>{const overdue=t.date<date&&!t.done,category=t.category==='work'?'업무':t.category==='personal'?'개인':'분류 없음',importance=t.importance==='high'?'높음':t.importance==='low'?'낮음':'보통',subtasks=Array.isArray(t.subtasks)?t.subtasks:[];return '<div class="todo '+(t.done?'done':'')+(overdue?' overdue':'')+'"><input type="checkbox" data-check="'+esc(t.id)+'" '+(t.done?'checked':'')+'><label>'+esc(t.text)+'<small class="todo-meta">중요도 '+importance+' · '+category+' · 등록 '+esc(t.date)+'</small>'+(t.done?'<small class="todo-completed-date">완료일 '+esc(t.doneAt||'날짜 정보 없음')+'</small>':'')+(overdue?'<small class="todo-due">미완료 · 원래 날짜 '+esc(t.date)+'</small>':'')+'</label><button type="button" class="todo-action" data-todo-edit="'+esc(t.id)+'">수정</button><button type="button" class="todo-action delete" data-todo-del="'+esc(t.id)+'">삭제</button><details class="todo-subtasks"><summary>하위 작업 ('+subtasks.length+')</summary><div class="todo-subtask-list">'+subtasks.map(x=>'<label class="todo-subtask '+(x.done?'done':'')+'"><input type="checkbox" data-subtask-check="'+esc(t.id)+'|'+esc(x.id)+'" '+(x.done?'checked':'')+'><span>'+esc(x.text)+'</span></label>').join('')+'</div><div class="todo-subtask-add"><input maxlength="120" data-subtask-input="'+esc(t.id)+'" placeholder="하위 작업 추가"><button type="button" data-subtask-add="'+esc(t.id)+'">추가</button></div></details></div>'};
+ if(todoView==='date'){
+  const groups={};
+  todoSource.forEach(t=>{const groupDate=t.done?(t.doneAt||t.date):t.date,groupKey=(t.done?'done:':'open:')+groupDate;(groups[groupKey]??={date:groupDate,done:t.done,items:[]}).items.push(t)});
+  $('todos').innerHTML=Object.keys(groups).sort((a,b)=>groups[b].date.localeCompare(groups[a].date)||a.localeCompare(b)).map(key=>{const group=groups[key],label=group.done?'완료일':'할 일 날짜';return '<section class="todo-date-group"><h3>'+label+' '+esc(group.date)+'</h3>'+sortTodos(group.items).map(renderTodoItem).join('')+'</section>'}).join('')||'<p class="muted">할 일이 없습니다.</p>';
+ }else{
+  $('todos').innerHTML=sortTodos(todoSource).map(renderTodoItem).join('')||'<p class="muted">할 일이 없습니다.</p>';
+ }
  document.querySelectorAll('[data-todo-filter]').forEach(button=>{const active=button.dataset.todoFilter===todoFilter;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
+ document.querySelectorAll('[data-todo-view]').forEach(button=>{const active=button.dataset.todoView===todoView;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
  const goalMinutes=goal*60,percent=goalMinutes?Math.min(100,Math.round(a/goalMinutes*100)):0;
  $('goalLabel').textContent='목표 '+fmt(goalMinutes);$('goalProgress').style.width=percent+'%';
  $('goalMessage').textContent=a>=goalMinutes?'목표 달성! 실제 기록 '+fmt(a):'목표의 '+percent+'% · '+fmt(Math.max(0,goalMinutes-a))+' 남음';
@@ -158,6 +166,8 @@ document.addEventListener('click',e=>{
  if(filter){timelineFilter=filter.dataset.timelineFilter;renderTimeline();return}
  const todoFilterButton=e.target.closest('[data-todo-filter]');
  if(todoFilterButton){todoFilter=todoFilterButton.dataset.todoFilter;render();return}
+ const todoViewButton=e.target.closest('[data-todo-view]');
+ if(todoViewButton){todoView=todoViewButton.dataset.todoView;render();return}
  const quick=e.target.closest('[data-add-hour]');
  if(quick){
   const hour=quick.dataset.addHour,hourStart=Number(hour)*60,hourEnd=hourStart+60,date=$('day').value||today(),slot=quick.closest('.timeline-hour').querySelector('.timeline-slot');
