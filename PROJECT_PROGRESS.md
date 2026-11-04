@@ -173,3 +173,12 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Corrected the test to target a Todo label beginning with the exact completed-item title rather than a substring of the entire list.
 - The corrected test commit is 3a2e65de017cae539054b2f6067f59ac931eb428.
 - A workflow run for the corrected head SHA has not yet been confirmed; do not treat the PR as passing until it succeeds.
+
+
+## 24-hour time input display consistency (2026-11-04)
+- User reported that Android's Korean-locale native time controls display values with 오전/오후 even though the stored time values are already 24-hour strings.
+- Updated all four native time inputs (record start/end and template start/end) to use the `en-GB` control locale, which requests 24-hour presentation while retaining native time-picker behavior and the existing `HH:mm` value format.
+- Added Playwright regression coverage for all four controls and for preserving values such as `05:00` and `17:25`.
+- Bumped the service-worker cache from v38 to v39 so installed PWA clients can refresh the changed HTML.
+- No app data, localStorage key, record schema, or existing time values were modified. Actual Android display still requires physical-device confirmation after deployment.
+- Work is on `fix/24-hour-time-inputs`; not merged or deployed until CI and review are complete.
