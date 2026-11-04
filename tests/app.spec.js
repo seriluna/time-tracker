@@ -1649,3 +1649,83 @@ test('중첩 Todo 백업은 복원되고 하위 작업 ID 중복 백업은 거�
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.todos[0].subtasks[0].subtasks[0].subtasks[0].text).toBe('3단계');
 });
+
+
+test('Todo 예상 소요시간은 저장·수정·삭제되고 하위 작업 완료율로 진행률을 계산함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('보고서 작성');
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoEstimate').fill('90');
+  await page.locator('#todoSubmit').click();
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = saved.todos.find(x => x.text === '보고서 작성').id;
+  expect(saved.todos.find(x => x.id === todoId).estimatedMinutes).toBe(90);
+
+  const todo = page.locator('#todos .todo').filter({ hasText: '보고서 작성' });
+  await todo.locator('.todo-subtasks').evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${todoId}|root"]`).fill('초안 작성');
+  await page.locator(`[data-subtask-add="${todoId}|root"]`).click();
+  await page.locator(`[data-subtask-input="${todoId}|root"]`).fill('최종 검토');
+  await page.locator(`[data-subtask-add="${todoId}|root"]`).click();
+
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 0% · 완료 0/2');
+  await todo.locator('input[data-subtask-check]').first().check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 50% · 완료 1/2');
+  await todo.locator('input[data-subtask-check]').nth(1).check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 100% · 완료 2/2');
+  await expect(todo).toContainText('예상 1시간 30분');
+
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  const restored = page.locator('#todos .todo').filter({ hasText: '보고서 작성' });
+  await expect(restored).toContainText('예상 1시간 30분');
+  await expect(restored.locator('.todo-progress')).toContainText('진행률 100% · 완료 2/2');
+
+  await restored.locator('[data-todo-edit]').click();
+  await expect(page.locator('#todoEstimate')).toHaveValue('90');
+  await page.locator('#todoEstimate').fill('120');
+  await page.locator('#todoSubmit').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === todoId).estimatedMinutes).toBe(120);
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+  expect(csv).toContain('예상 소요시간(분)');
+  expect(csv).toContain('120');
+  expect(csv).toContain('100');
+});
+
+test('Todo 예상 소요시간을 비우면 선택 필드가 제거되고 잘못된 백업 값은 기존 데이터를 보존하며 거부함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('예상 시간 수정 테스트');
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoEstimate').fill('45');
+  await page.locator('#todoSubmit').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = saved.todos.find(x => x.text === '예상 시간 수정 테스트').id;
+
+  await page.locator(`[data-todo-edit="${todoId}"]`).click();
+  await page.locator('#todoEstimate').fill('');
+  await page.locator('#todoSubmit').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === todoId)).not.toHaveProperty('estimatedMinutes');
+
+  await page.locator('.tools-menu summary').click();
+  const invalid = {
+    entries: [],
+    todos: [{ id: 'invalid-estimate', date: await page.locator('#day').inputValue(), text: '잘못된 예상 시간', done: false, estimatedMinutes: 0 }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-todo-estimate.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(invalid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].text)).toBe('예상 시간 수정 테스트');
+});
