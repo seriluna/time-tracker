@@ -1656,7 +1656,8 @@ test('Todo 예상 소요시간은 저장·수정·삭제되고 하위 작업 완
   await page.locator('#todoText').fill('보고서 작성');
   await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoEstimate').fill('90');
-  await page.locator('#todoSubmit').click();
+  expect(await page.locator('#todoForm').evaluate(form => form.checkValidity())).toBe(true);
+  await page.locator('#todoForm').evaluate(form => form.requestSubmit());
 
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   const todoId = saved.todos.find(x => x.text === '보고서 작성').id;
@@ -1706,7 +1707,8 @@ test('Todo 예상 소요시간을 비우면 선택 필드가 제거되고 잘못
   await page.locator('#todoText').fill('예상 시간 수정 테스트');
   await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoEstimate').fill('45');
-  await page.locator('#todoSubmit').click();
+  expect(await page.locator('#todoForm').evaluate(form => form.checkValidity())).toBe(true);
+  await page.locator('#todoForm').evaluate(form => form.requestSubmit());
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   const todoId = saved.todos.find(x => x.text === '예상 시간 수정 테스트').id;
 
