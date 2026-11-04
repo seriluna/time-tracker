@@ -2002,3 +2002,103 @@ test('예상 시간이 없는 Todo는 60분 계획을 만들고 24시간 초과 
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.entries.filter(x => x.todoId === 'too-long-duration')).toHaveLength(0);
 });
+
+
+test('Todo 템플릿은 예상 시간과 중첩 하위 작업을 저장하고 새 ID로 선택 날짜에 불러옴', async ({ page }) => {
+  const today = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [{
+      id: 'template-source',
+      date,
+      text: '주간 리포트',
+      done: true,
+      doneAt: date,
+      category: 'work',
+      importance: 'high',
+      estimatedMinutes: 90,
+      subtasks: [{
+        id: 'template-parent',
+        text: '데이터 수집',
+        done: true,
+        subtasks: [{ id: 'template-leaf', text: '매출 정리', done: true }]
+      }]
+    }]
+  })), today);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  page.once('dialog', dialog => dialog.accept('주간 리포트 템플릿'));
+  await page.locator('[data-todo-template-save="template-source"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('주간 리포트 템플릿');
+  const templateStore = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates')));
+  expect(templateStore).toHaveLength(1);
+  expect(templateStore[0]).toMatchObject({
+    name: '주간 리포트 템플릿',
+    text: '주간 리포트',
+    category: 'work',
+    importance: 'high',
+    estimatedMinutes: 90
+  });
+  expect(templateStore[0].subtasks[0].subtasks[0].text).toBe('매출 정리');
+
+  await page.locator('#day').fill('2026-11-05');
+  await page.locator('[data-todo-template-load="' + templateStore[0].id + '"]').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(2);
+  const loaded = saved.todos.find(x => x.date === '2026-11-05');
+  expect(loaded).toMatchObject({
+    text: '주간 리포트',
+    done: false,
+    category: 'work',
+    importance: 'high',
+    estimatedMinutes: 90
+  });
+  expect(loaded).not.toHaveProperty('doneAt');
+  expect(loaded.subtasks[0].done).toBe(false);
+  expect(loaded.subtasks[0].subtasks[0].done).toBe(false);
+  expect(loaded.id).not.toBe('template-source');
+  expect(loaded.subtasks[0].id).not.toBe('template-parent');
+  expect(loaded.subtasks[0].subtasks[0].id).not.toBe('template-leaf');
+  expect(saved.todos.find(x => x.id === 'template-source').done).toBe(true);
+  expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toContain('주간 리포트');
+});
+
+test('Todo 템플릿은 새로고침 후 유지되고 삭제해도 기존 Todo 데이터는 변경하지 않음', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('반복 업무');
+  await page.locator('#todoSubmit').click();
+  const todoId = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].id);
+  page.once('dialog', dialog => dialog.accept('반복 업무 템플릿'));
+  await page.locator('[data-todo-template-save="' + todoId + '"]').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('반복 업무 템플릿');
+  const templateId = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates'))[0].id);
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-template-del="' + templateId + '"]').click();
+  await expect(page.locator('#todoTemplates')).not.toContainText('반복 업무 템플릿');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0].text).toBe('반복 업무');
+});
+
+test('손상된 Todo 템플릿 저장 데이터는 덮어쓰지 않고 기존 시간 기록과 Todo를 보존함', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [],
+      todos: [{ id: 'safe-existing-todo', date: document.querySelector('#day').value, text: '기존 데이터', done: false }]
+    }));
+    localStorage.setItem('time-tracker-todo-templates', '{broken json');
+  });
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('올바르지 않아 읽기 전용');
+  const before = await page.evaluate(() => localStorage.getItem('time-tracker-todo-templates'));
+  page.once('dialog', dialog => dialog.accept('새 템플릿'));
+  await page.locator('[data-todo-template-save="safe-existing-todo"]').click();
+  const after = await page.evaluate(() => localStorage.getItem('time-tracker-todo-templates'));
+  expect(after).toBe(before);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].text).toBe('기존 데이터');
+});
