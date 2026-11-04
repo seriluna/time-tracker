@@ -2303,3 +2303,15 @@ test('Step 8 모바일 Todo 화면은 320px에서도 필터·검색·템플릿·
   }));
   expect(filteredSizes.document).toBeLessThanOrEqual(filteredSizes.viewport);
 });
+
+
+test('시간 입력 필드는 한국어 기기에서도 24시간 표시 로캘을 사용함', async ({ page }) => {
+  for (const selector of ['#start', '#end', '#templateStart', '#templateEnd']) {
+    await expect(page.locator(selector)).toHaveAttribute('type', 'time');
+    await expect(page.locator(selector)).toHaveAttribute('lang', 'en-GB');
+  }
+  await page.locator('#start').fill('05:00');
+  await page.locator('#end').fill('17:25');
+  await expect(page.locator('#start')).toHaveValue('05:00');
+  await expect(page.locator('#end')).toHaveValue('17:25');
+});
