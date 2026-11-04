@@ -1571,6 +1571,7 @@ test('기존 1단계 subtasks 데이터는 변경 없이 읽고 하위 단계 �
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   await expect(page.locator('#todos')).toContainText('기존 하위 작업');
+  await page.locator('[data-subtask-children="legacy-root|root"]').evaluate(el => { el.open = true; });
   await page.locator('[data-subtask-children="legacy-root|legacy-child"]').evaluate(el => { el.open = true; });
   await page.locator('[data-subtask-input="legacy-root|legacy-child"]').fill('새로운 2단계 작업');
   await page.locator('[data-subtask-add="legacy-root|legacy-child"]').click();
