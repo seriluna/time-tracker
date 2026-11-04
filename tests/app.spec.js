@@ -2165,6 +2165,7 @@ test('각 중첩 하위 작업 그룹에 해당 단계의 진행률을 표시하
   const root = page.locator('#todos .todo').filter({ hasText: '전체 프로젝트' });
   await expect(root.locator('.todo-progress')).toContainText('진행률 33% · 완료 1/3');
 
+  await page.locator('[data-subtask-children="progress-root|root"]').evaluate(el => { el.open = true; });
   await page.locator('[data-subtask-children="progress-root|progress-parent"]').evaluate(el => { el.open = true; });
   await page.locator('[data-subtask-check="progress-root|progress-leaf-b"]').check();
   await expect(page.locator('[data-subtask-progress="progress-root|progress-parent"]')).toHaveText('진행률 100% · 완료 2/2');
