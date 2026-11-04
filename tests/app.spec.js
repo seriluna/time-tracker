@@ -1013,7 +1013,7 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   const restored = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await restored.locator('details.todo-subtasks').first().locator('summary').click();
+  await restored.locator('details.todo-subtasks > summary').first().click();
   await expect(restored.locator('input[data-subtask-check]').first()).toBeChecked();
 });
 
