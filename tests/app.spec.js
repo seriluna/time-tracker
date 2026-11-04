@@ -1974,3 +1974,29 @@ test('연결된 Todo 삭제 시 계획 기록은 보존하고 연결만 해제�
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.entries[0].name).toBe('독립 보존 계획');
 });
+
+
+test('예상 시간이 없는 Todo는 60분 계획을 만들고 24시간 초과 예상은 안전하게 거부함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [
+      { id: 'default-duration', date, text: '시간 미설정 작업', done: false },
+      { id: 'too-long-duration', date, text: '장시간 작업', done: false, estimatedMinutes: 1440 }
+    ]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="default-duration"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.todoId === 'default-duration')).toMatchObject({
+    start: '09:00', end: '10:00', kind: 'planned'
+  });
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="too-long-duration"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.todoId === 'too-long-duration')).toHaveLength(0);
+});
