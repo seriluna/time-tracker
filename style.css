@@ -102,3 +102,9 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo-filter-summary{font-size:11px;margin:4px 2px 10px}
 .todo-subtask-progress{display:block;margin:3px 0 5px 28px;font-size:10px;color:#747b90}
 @media(max-width:480px){.todo-discovery-tools{grid-template-columns:1fr 1fr}.todo-search-field{grid-column:1/-1}}
+
+
+/* Keep Todo category filters directly visible beside the status filters. */
+.todo-category-filters{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.todo-category-filters span{font-size:12px;color:#737b90;margin-right:2px}
+.todo-category-filters button{padding:8px 12px;font-size:12px}
