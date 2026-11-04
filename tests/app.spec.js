@@ -917,9 +917,68 @@ test('이전 날짜의 미완료 할 일은 이후 날짜에도 표시되고 완
   await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
 });
 
+test('Todo 빠른 입력은 간결하게 표시하고 세부 설정은 접어서 제공함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoText')).toBeVisible();
+  await expect(page.locator('#todoSubmit')).toBeVisible();
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#todoCategory')).toBeHidden();
+  await expect(page.locator('#todoImportance')).toBeHidden();
+
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toBeVisible();
+  await expect(page.locator('#todoImportance')).toBeVisible();
+  await expect(page.locator('#todoOptionsSummary')).toContainText('업무');
+  await expect(page.locator('#todoOptionsSummary')).toContainText('보통');
+});
+
+test('Todo 분류와 중요도 선택은 다음 입력 및 새로고침 후에도 기억함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoText').fill('기본 설정 저장 테스트');
+  await page.locator('#todoSubmit').click();
+
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoCategory')).toBeHidden();
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('high');
+
+  await page.locator('#todoOptions summary').click();
+  await page.locator('#todoText').fill('기억한 기본 설정으로 추가');
+  await page.locator('#todoSubmit').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(todo => todo.text === '기억한 기본 설정으로 추가')).toMatchObject({ category: 'personal', importance: 'high' });
+});
+
+test('Todo 수정 진입 시 세부 설정이 열리고 취소하면 마지막 기본 설정으로 복귀함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('low');
+  await page.locator('#todoText').fill('수정 화면 확인');
+  await page.locator('#todoSubmit').click();
+
+  await page.locator('[data-todo-edit]').click();
+  await expect(page.locator('#todoOptions')).toHaveAttribute('open', '');
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('low');
+  await page.locator('#cancelTodoEdit').click();
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#todoText')).toHaveValue('');
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('low');
+});
+
 test('할 일 분류를 저장하고 마지막 분류를 다음 입력에도 기억함', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
   const sourceDate = await page.locator('#day').inputValue();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoCategory').selectOption('personal');
   await page.locator('#todoText').fill('개인 할 일 분류 테스트');
   await page.locator('#todoForm button[type="submit"]').click();
@@ -1370,6 +1429,7 @@ test('전체 타임라인 +에서는 계획/실제를 선택할 수 있고 서�
 
 test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가 작동함', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoText').fill('낮은 우선순위');
   await page.locator('#todoImportance').selectOption('low');
   await page.locator('#todoForm button[type="submit"]').click();
