@@ -1511,3 +1511,125 @@ test('할 일 완료·미완료 전체를 목록 또는 날짜별로 보고 수�
   expect(sizes.editWidth).toBe(sizes.deleteWidth);
   expect(sizes.editHeight).toBe(sizes.deleteHeight);
 });
+
+
+test('Todo 하위 작업은 여러 단계로 추가·수정·완료·삭제되고 새로고침 후 유지됨', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('프로젝트 준비');
+  await page.locator('#todoSubmit').click();
+  const root = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.text === '프로젝트 준비').id);
+
+  await page.locator('.todo-subtasks').first().evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|root"]`).fill('자료 조사');
+  await page.locator(`[data-subtask-add="${root}|root"]`).click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const parent = saved.todos.find(x => x.id === root).subtasks[0].id;
+
+  await page.locator(`[data-subtask-children="${root}|${parent}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|${parent}"]`).fill('경쟁 제품 정리');
+  await page.locator(`[data-subtask-add="${root}|${parent}"]`).click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const child = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].id;
+
+  await page.locator(`[data-subtask-children="${root}|${child}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|${child}"]`).fill('가격 비교');
+  await page.locator(`[data-subtask-add="${root}|${child}"]`).click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const grandchild = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].id;
+
+  await page.locator(`[data-subtask-check="${root}|${grandchild}"]`).check();
+  page.once('dialog', dialog => dialog.accept('시장 가격 비교'));
+  await page.locator(`[data-subtask-edit="${root}|${child}"]`).click();
+  await expect(page.locator('#todos')).toContainText('시장 가격 비교');
+  await expect(page.locator('#todos')).toContainText('가격 비교');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator(`[data-subtask-del="${root}|${grandchild}"]`).click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('시장 가격 비교');
+  await expect(page.locator('#todos')).not.toContainText('가격 비교');
+
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const persisted = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0];
+  expect(persisted.text).toBe('시장 가격 비교');
+  expect(persisted.subtasks).toEqual([]);
+});
+
+test('기존 1단계 subtasks 데이터는 변경 없이 읽고 하위 단계 추가 후에도 보존됨', async ({ page }) => {
+  const legacy = {
+    entries: [],
+    todos: [{
+      id: 'legacy-root',
+      date: await page.locator('#day').inputValue(),
+      text: '기존 할 일',
+      done: false,
+      subtasks: [{ id: 'legacy-child', text: '기존 하위 작업', done: true }]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), legacy);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('기존 하위 작업');
+  await page.locator('[data-subtask-children="legacy-root|legacy-child"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-input="legacy-root|legacy-child"]').fill('새로운 2단계 작업');
+  await page.locator('[data-subtask-add="legacy-root|legacy-child"]').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('기존 하위 작업');
+  await expect(page.locator('#todos')).toContainText('새로운 2단계 작업');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks[0].text).toBe('새로운 2단계 작업');
+});
+
+test('중첩 Todo 백업은 복원되고 하위 작업 ID 중복 백업은 거부하며 기존 데이터를 보존함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const original = { entries: [], todos: [{ id: 'keep-root', date, text: '보존할 할 일', done: false }] };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), original);
+  await page.reload();
+  await page.locator('.tools-menu summary').click();
+
+  const invalid = {
+    entries: [],
+    todos: [{
+      id: 'duplicate-root',
+      date,
+      text: '중복 ID 백업',
+      done: false,
+      subtasks: [{ id: 'same-id', text: '부모 하위 작업', done: false, subtasks: [{ id: 'same-id', text: '중첩 하위 작업', done: false }] }]
+    }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'duplicate-nested-todo.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(invalid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].text)).toBe('보존할 할 일');
+
+  const valid = {
+    entries: [],
+    todos: [{
+      id: 'nested-root',
+      date,
+      text: '복원할 계층 할 일',
+      done: false,
+      subtasks: [{ id: 'nested-child-1', text: '1단계', done: false, subtasks: [{ id: 'nested-child-2', text: '2단계', done: true, subtasks: [{ id: 'nested-child-3', text: '3단계', done: false }] }] }]
+    }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'nested-todo.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(valid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('복원할 계층 할 일');
+  await expect(page.locator('#todos')).toContainText('3단계');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].subtasks[0].subtasks[0].subtasks[0].text).toBe('3단계');
+});
