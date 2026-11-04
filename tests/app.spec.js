@@ -2102,3 +2102,71 @@ test('손상된 Todo 템플릿 저장 데이터는 덮어쓰지 않고 기존 �
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.todos[0].text).toBe('기존 데이터');
 });
+
+
+test('Todo 분류·중요도 필터를 조합하고 하위 작업 이름으로 검색할 수 있음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [
+      { id: 'filter-work-high', date, text: '주간 보고서', done: false, category: 'work', importance: 'high', subtasks: [{ id: 'filter-child', text: '매출 데이터 확인', done: false }] },
+      { id: 'filter-work-low', date, text: '자료 정리', done: false, category: 'work', importance: 'low' },
+      { id: 'filter-personal-high', date, text: '운동 계획', done: false, category: 'personal', importance: 'high' },
+      { id: 'filter-personal-low', date, text: '여행 예약', done: false, category: 'personal', importance: 'low' }
+    ]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await page.locator('#todoCategoryFilter').selectOption('personal');
+  await page.locator('#todoImportanceFilter').selectOption('high');
+  await expect(page.locator('#todos .todo')).toHaveCount(1);
+  await expect(page.locator('#todos')).toContainText('운동 계획');
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 1 / 4개');
+
+  await page.locator('#todoCategoryFilter').selectOption('all');
+  await page.locator('#todoImportanceFilter').selectOption('all');
+  await page.locator('#todoSearch').fill('매출 데이터');
+  await expect(page.locator('#todos .todo')).toHaveCount(1);
+  await expect(page.locator('#todos')).toContainText('주간 보고서');
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 1 / 4개');
+  await page.locator('#todoSearch').fill('없는 검색어');
+  await expect(page.locator('#todos .todo')).toHaveCount(0);
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 0 / 4개');
+});
+
+test('각 중첩 하위 작업 그룹에 해당 단계의 진행률을 표시하고 완료 변경 시 갱신함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [{
+      id: 'progress-root',
+      date,
+      text: '전체 프로젝트',
+      done: false,
+      subtasks: [
+        {
+          id: 'progress-parent',
+          text: '시장 조사',
+          done: false,
+          subtasks: [
+            { id: 'progress-leaf-a', text: '경쟁사 분석', done: true },
+            { id: 'progress-leaf-b', text: '가격 조사', done: false }
+          ]
+        },
+        { id: 'progress-leaf-c', text: '결과 요약', done: false }
+      ]
+    }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await expect(page.locator('[data-subtask-progress="progress-root|progress-parent"]')).toHaveText('진행률 50% · 완료 1/2');
+  const root = page.locator('#todos .todo').filter({ hasText: '전체 프로젝트' });
+  await expect(root.locator('.todo-progress')).toContainText('진행률 33% · 완료 1/3');
+
+  await page.locator('[data-subtask-children="progress-root|progress-parent"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-b"]').check();
+  await expect(page.locator('[data-subtask-progress="progress-root|progress-parent"]')).toHaveText('진행률 100% · 완료 2/2');
+  await expect(root.locator('.todo-progress')).toContainText('진행률 67% · 완료 2/3');
+});
