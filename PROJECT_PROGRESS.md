@@ -173,3 +173,12 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Corrected the test to target a Todo label beginning with the exact completed-item title rather than a substring of the entire list.
 - The corrected test commit is 3a2e65de017cae539054b2f6067f59ac931eb428.
 - A workflow run for the corrected head SHA has not yet been confirmed; do not treat the PR as passing until it succeeds.
+
+
+## Visible Todo category filters (2026-11-04)
+- User reported that category selection was not visible in the Todo list screen. The underlying category/priority filtering logic already existed, but the category selector was grouped in the compact discovery controls and was not apparent in the supplied screen.
+- Replaced the hidden-in-the-discovery-row category select with always-visible category chips directly below the Todo status filters: All, Work, Personal.
+- Kept the existing category state and filtering logic, including compatibility with existing Todo category values. Search and priority filtering remain available.
+- Added Playwright coverage for the visible category controls, active-state accessibility, and filtering results; updated the existing combined category/priority test to use the visible controls.
+- Bumped service-worker cache from v38 to v40 to refresh installed PWA assets after the separate v39 24-hour-time branch; no localStorage schema, Todo data, or user records changed.
+- This change is isolated on `feat/visible-todo-category-filters`; PR/CI and deployment verification are still pending.
