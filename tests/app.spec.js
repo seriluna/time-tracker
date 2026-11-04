@@ -1937,6 +1937,8 @@ test('Todo에서 예상 시간을 기본값으로 계획을 만들고 링크를 
   await page.locator('[data-edit="' + plan.id + '"]').click();
   await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
   await page.locator('#kind').selectOption('actual');
+  await page.locator('#start').fill('11:00');
+  await page.locator('#end').fill('12:15');
   await page.locator('#saveEntry').click();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   const converted = saved.entries.find(x => x.id === plan.id);
