@@ -93,3 +93,12 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo-template-info small{font-size:10px;color:#72798b;line-height:1.4}
 .todo-template-card button{padding:7px 8px;font-size:11px;white-space:nowrap}
 @media(max-width:380px){.todo-template-card{flex-wrap:wrap}.todo-template-info{flex-basis:100%}.todo-template-card button{flex:1}}
+
+
+/* Todo Step 7: category, priority, search and nested progress navigation. */
+.todo-discovery-tools{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:7px;margin:10px 0 4px}
+.todo-discovery-tools label{display:grid;gap:4px;min-width:0;font-size:11px;color:#697187}
+.todo-discovery-tools input,.todo-discovery-tools select{width:100%;min-width:0;padding:9px;font-size:12px}
+.todo-filter-summary{font-size:11px;margin:4px 2px 10px}
+.todo-subtask-progress{display:block;margin:3px 0 5px 28px;font-size:10px;color:#747b90}
+@media(max-width:480px){.todo-discovery-tools{grid-template-columns:1fr 1fr}.todo-search-field{grid-column:1/-1}}
