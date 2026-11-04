@@ -929,7 +929,7 @@ test('Todo 빠른 입력은 간결하게 표시하고 세부 설정은 접어서
   await expect(page.locator('#todoCategory')).toBeVisible();
   await expect(page.locator('#todoImportance')).toBeVisible();
   await expect(page.locator('#todoOptionsSummary')).toContainText('업무');
-  await expect(page.locator('#todoOptionsSummary')).toContainText('보통');
+  await expect(page.locator('#todoOptionsSummary')).toContainText('높음');
 });
 
 test('Todo 분류와 중요도 선택은 다음 입력 및 새로고침 후에도 기억함', async ({ page }) => {
@@ -1433,6 +1433,7 @@ test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가
   await page.locator('#todoText').fill('낮은 우선순위');
   await page.locator('#todoImportance').selectOption('low');
   await page.locator('#todoForm button[type="submit"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoText').fill('중요한 할 일');
   await page.locator('#todoImportance').selectOption('high');
   await page.locator('#todoForm button[type="submit"]').click();
