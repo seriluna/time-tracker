@@ -1013,8 +1013,8 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   const restored = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await restored.locator('details[data-subtask-children$="|root"]').locator('summary').click();
-  await expect(restored.locator('input[data-subtask-check]')).toBeChecked();
+  await restored.locator('details.todo-subtasks').first().locator('summary').click();
+  await expect(restored.locator('input[data-subtask-check]').first()).toBeChecked();
 });
 
 
@@ -1548,7 +1548,7 @@ test('Todo 하위 작업은 여러 단계로 추가·수정·완료·삭제되�
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   await expect(page.locator('#todos')).toContainText('시장 가격 비교');
-  await expect(page.locator('#todos')).not.toContainText('가격 비교');
+  await expect(page.locator(`[data-subtask-check="${root}|${grandchild}"]`)).toHaveCount(0);
 
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   const persisted = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0];
