@@ -1545,9 +1545,9 @@ test('Todo 하위 작업은 여러 단계로 추가·수정·완료·삭제되�
   const grandchild = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].id;
   const childDetails = page.locator(`[data-subtask-children="${root}|${child}"]`);
   await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
-  await childDetails.locator('summary').click();
+  await childDetails.locator(':scope > summary').click();
   await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeHidden();
-  await childDetails.locator('summary').click();
+  await childDetails.locator(':scope > summary').click();
   await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
 
   await page.locator(`[data-subtask-check="${root}|${grandchild}"]`).check();
