@@ -65,6 +65,10 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo-options[open]>summary:after{content:"−"}
 .todo-options-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 10px 10px}
 .todo-options-fields label{display:grid;gap:5px;font-size:11px;color:#697187}
-.todo-options-fields select{width:100%;min-width:0;padding:9px;font-size:13px}
+.todo-options-fields select,.todo-options-fields input{width:100%;min-width:0;padding:9px;font-size:13px}
+.todo-estimate-field{grid-column:1/-1}
+.todo-progress{display:grid;grid-template-columns:minmax(70px,1fr) auto;align-items:center;gap:8px;margin-top:6px;max-width:320px}
+.todo-progress-bar{width:100%;height:7px;border:0;border-radius:99px;overflow:hidden;accent-color:#6267b2}
+.todo-progress small{font-size:11px;color:#697187;white-space:nowrap}
 #cancelTodoEdit{justify-self:end;padding:7px 12px;font-size:12px}
 @media(max-width:380px){.todo-primary-row input{font-size:14px}.todo-primary-row button{min-width:58px;padding:9px 12px}}
