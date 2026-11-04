@@ -1880,3 +1880,97 @@ test('상위 Todo를 직접 완료하거나 취소하면 모든 중첩 하위 �
   expect(saved.todos[0].subtasks[0]).not.toHaveProperty('doneAt');
   expect(saved.todos[0].subtasks[0].subtasks[0].done).toBe(false);
 });
+
+
+test('Todo 제외는 데이터를 삭제하지 않고 별도 필터에서 복원할 수 있음', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('보관할 작업');
+  await page.locator('#todoSubmit').click();
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = before.todos.find(x => x.text === '보관할 작업').id;
+
+  await page.locator('[data-todo-exclude="' + todoId + '"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0].excluded).toBe(true);
+  await expect(page.locator('#todos')).not.toContainText('보관할 작업');
+
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+  await page.locator('[data-todo-restore="' + todoId + '"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0]).not.toHaveProperty('excluded');
+  await page.locator('[data-todo-filter="all"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+});
+
+test('Todo에서 예상 시간을 기본값으로 계획을 만들고 링크를 보존하며 계획 시간만 중복 방지함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [
+      { id: 'existing-plan', date, name: '기존 계획', start: '09:00', end: '10:00', kind: 'planned' },
+      { id: 'overlap-actual', date, name: '실제 기록', start: '10:00', end: '11:00', kind: 'actual' }
+    ],
+    todos: [{ id: 'linked-todo', date, text: '제안서 작성', done: false, estimatedMinutes: 75 }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="linked-todo"]').click();
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const plan = saved.entries.find(x => x.todoId === 'linked-todo');
+  expect(plan).toMatchObject({ date, name: '제안서 작성', start: '10:00', end: '11:15', kind: 'planned', todoId: 'linked-todo' });
+  expect(saved.entries.find(x => x.id === 'overlap-actual')).toBeTruthy();
+  await expect(page.locator('#todos')).toContainText('연결 계획 1개');
+
+  await page.reload();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.todoId === 'linked-todo')).toBeTruthy();
+
+  await page.locator('[data-tab="record"]').click();
+  await page.locator('[data-edit="' + plan.id + '"]').click();
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#saveEntry').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const converted = saved.entries.find(x => x.id === plan.id);
+  expect(converted.kind).toBe('actual');
+  expect(converted).not.toHaveProperty('todoId');
+  expect(saved.todos.find(x => x.id === 'linked-todo')).toBeTruthy();
+});
+
+test('연결된 Todo 삭제 시 계획 기록은 보존하고 연결만 해제하며 잘못된 링크 백업은 거부함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [{ id: 'linked-plan', date, name: '독립 보존 계획', start: '08:00', end: '09:00', kind: 'planned', todoId: 'delete-todo' }],
+    todos: [{ id: 'delete-todo', date, text: '삭제할 Todo', done: false }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-del="delete-todo"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(0);
+  expect(saved.entries).toHaveLength(1);
+  expect(saved.entries[0].name).toBe('독립 보존 계획');
+  expect(saved.entries[0]).not.toHaveProperty('todoId');
+
+  const invalid = { entries: [{ id: 'bad-plan', date, name: '잘못된 연결', start: '08:00', end: '09:00', kind: 'planned', todoId: 'missing-todo' }], todos: [] };
+  await page.evaluate(data => {
+    const file = new File([JSON.stringify(data)], 'invalid-link.json', { type: 'application/json' });
+    const input = document.querySelector('#importFile');
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, invalid);
+  await expect(page.locator('#importPreview')).toContainText('데이터에 오류');
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries[0].name).toBe('독립 보존 계획');
+});
