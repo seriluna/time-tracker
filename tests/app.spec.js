@@ -481,7 +481,7 @@ test('JSON 백업 복원 시 시간 기록과 할 일을 함께 복원하고 새
   await page.locator('[data-tab="todo"]').click();
   const afterReload = page.locator('#todos .todo').filter({ hasText: '복원된 할 일' });
   await expect(afterReload).toBeVisible();
-  await afterReload.locator('details.todo-subtasks summary').click();
+  await afterReload.locator('details[data-subtask-children$="|root"] > summary').click();
   await expect(afterReload.locator('input[data-subtask-check]')).toBeChecked();
 
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
@@ -1002,7 +1002,7 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.locator('#todoText').fill('프로젝트 준비');
   await page.locator('#todoForm button[type="submit"]').click();
   const todo = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await todo.locator('details.todo-subtasks summary').click();
+  await todo.locator('details[data-subtask-children$="|root"] > summary').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
   await expect(todo.locator('.todo-subtask-list')).toContainText('자료 정리');
@@ -1013,7 +1013,7 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   const restored = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await restored.locator('details.todo-subtasks').locator('summary').click();
+  await restored.locator('details[data-subtask-children$="|root"]').locator('summary').click();
   await expect(restored.locator('input[data-subtask-check]')).toBeChecked();
 });
 
@@ -1086,7 +1086,7 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   await page.locator('#todoForm button[type="submit"]').click();
 
   const todo = page.locator('#todos .todo').filter({ hasText: 'CSV 하위 작업 테스트' });
-  await todo.locator('details.todo-subtasks summary').click();
+  await todo.locator('details[data-subtask-children$="|root"] > summary').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
   await todo.locator('input[data-subtask-check]').check();
