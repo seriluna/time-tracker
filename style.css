@@ -72,3 +72,10 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo-progress small{font-size:11px;color:#697187;white-space:nowrap}
 #cancelTodoEdit{justify-self:end;padding:7px 12px;font-size:12px}
 @media(max-width:380px){.todo-primary-row input{font-size:14px}.todo-primary-row button{min-width:58px;padding:9px 12px}}
+
+
+/* Todo Step 5: exclusion and linked time plans. */
+.todo-excluded-help{margin:0 0 10px;font-size:12px}
+.todo.excluded{opacity:.88;border-style:dashed}
+.todo-exclude-action{border-color:#d7dbea}
+.todo-filters{flex-wrap:wrap}
