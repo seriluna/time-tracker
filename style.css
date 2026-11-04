@@ -81,3 +81,15 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo-filters{flex-wrap:wrap}
 
 .todo{flex-wrap:wrap}.todo>label{min-width:0}.todo-plan-action{flex:0 0 72px;width:72px}
+
+
+/* Todo Step 6: reusable task templates with nested subtasks. */
+.todo-template-panel{margin:14px 0;padding:12px;border:1px solid #e6e9f2;border-radius:12px;background:#fafbfe}
+.todo-template-panel h3{margin:0 0 5px;font-size:14px}
+.todo-template-panel>p{font-size:11px;margin:0 0 9px}
+.todo-template-card{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid #eceef4}
+.todo-template-info{flex:1;min-width:0;display:grid;gap:3px}
+.todo-template-info b{font-size:12px;overflow-wrap:anywhere}
+.todo-template-info small{font-size:10px;color:#72798b;line-height:1.4}
+.todo-template-card button{padding:7px 8px;font-size:11px;white-space:nowrap}
+@media(max-width:380px){.todo-template-card{flex-wrap:wrap}.todo-template-info{flex-basis:100%}.todo-template-card button{flex:1}}
