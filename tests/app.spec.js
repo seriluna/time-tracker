@@ -1089,7 +1089,13 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   await todo.locator('details[data-subtask-children$="|root"] > summary').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
-  await todo.locator('input[data-subtask-check]').check();
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const rootId = stored.todos.find(x => x.text === 'CSV 하위 작업 테스트').id;
+  const childId = stored.todos.find(x => x.id === rootId).subtasks[0].id;
+  await page.locator(`[data-subtask-children="${rootId}|${childId}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${rootId}|${childId}"]`).fill('하위 조사');
+  await page.locator(`[data-subtask-add="${rootId}|${childId}"]`).click();
+  await todo.locator('input[data-subtask-check]').first().check();
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('.tools-menu').locator('summary').click();
@@ -1100,6 +1106,7 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   for await (const chunk of stream) csv += chunk.toString('utf8');
   expect(csv).toContain('CSV 하위 작업 테스트');
   expect(csv).toContain('[완료] 자료 정리');
+  expect(csv).toContain('[미완료] 하위 조사');
 });
 
 
@@ -1536,8 +1543,16 @@ test('Todo 하위 작업은 여러 단계로 추가·수정·완료·삭제되�
   await page.locator(`[data-subtask-add="${root}|${child}"]`).click();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   const grandchild = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].id;
+  const childDetails = page.locator(`[data-subtask-children="${root}|${child}"]`);
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
+  await childDetails.locator('summary').click();
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeHidden();
+  await childDetails.locator('summary').click();
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
 
   await page.locator(`[data-subtask-check="${root}|${grandchild}"]`).check();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].done).toBe(true);
   page.once('dialog', dialog => dialog.accept('시장 가격 비교'));
   await page.locator(`[data-subtask-edit="${root}|${child}"]`).click();
   await expect(page.locator('#todos')).toContainText('시장 가격 비교');
