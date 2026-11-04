@@ -1772,3 +1772,111 @@ test('중첩 하위 작업 진행률은 가장 깊은 작업만 집계해 부모
   await page.locator('[data-subtask-check="progress-root|progress-leaf-3"]').check();
   await expect(todo.locator('.todo-progress')).toContainText('진행률 100% · 완료 3/3');
 });
+
+
+test('하위 작업 전체 완료 시 모든 상위 Todo가 자동 완료되고 미완료로 바꾸면 완료일과 함께 되돌아감', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'auto-root',
+      date,
+      text: '프로젝트 전체',
+      done: false,
+      subtasks: [
+        {
+          id: 'auto-parent',
+          text: '자료 조사',
+          done: false,
+          subtasks: [
+            { id: 'auto-leaf-1', text: '자료 수집', done: false },
+            { id: 'auto-leaf-2', text: '자료 정리', done: false }
+          ]
+        },
+        { id: 'auto-leaf-3', text: '보고서 작성', done: false }
+      ]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  const getSaved = () => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const openTree = async () => {
+    await page.locator('[data-subtask-children="auto-root|root"]').evaluate(el => { el.open = true; });
+    await page.locator('[data-subtask-children="auto-root|auto-parent"]').evaluate(el => { el.open = true; });
+  };
+  await openTree();
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-1"]').check();
+  let saved = await getSaved();
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-2"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+  expect(saved.todos[0].done).toBe(false);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-3"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-1"]').uncheck();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[1].done).toBe(true);
+
+  await page.locator('[data-subtask-check="auto-root|auto-parent"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks.every(x => x.done)).toBe(true);
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+
+  await page.reload();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+});
+
+test('상위 Todo를 직접 완료하거나 취소하면 모든 중첩 하위 작업 상태가 함께 변경됨', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'cascade-root',
+      date,
+      text: '상위 작업 직접 제어',
+      done: false,
+      subtasks: [{
+        id: 'cascade-parent',
+        text: '하위 묶음',
+        done: false,
+        subtasks: [{ id: 'cascade-leaf', text: '세부 작업', done: false }]
+      }]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('[data-check="cascade-root"]').check();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+
+  await page.locator('[data-check="cascade-root"]').uncheck();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].subtasks[0].done).toBe(false);
+});
