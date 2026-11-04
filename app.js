@@ -105,6 +105,7 @@ function startQuickEntry(hour){
  $('entryForm').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function render(){
+ const openSubtaskKeys=new Set([...document.querySelectorAll('#todos details[data-subtask-children][open]')].map(el=>el.dataset.subtaskChildren));
  renderTimeline();
  const date=$('day').value,es=s.entries.filter(e=>e.date===date).sort((a,b)=>a.start.localeCompare(b.start));
  const p=es.filter(e=>e.kind==='planned').reduce((n,e)=>n+dur(e),0),a=es.filter(e=>e.kind==='actual').reduce((n,e)=>n+dur(e),0);
@@ -123,6 +124,7 @@ function render(){
  }else{
   $('todos').innerHTML=sortTodos(todoSource).map(renderTodoItem).join('')||'<p class="muted">할 일이 없습니다.</p>';
  }
+ document.querySelectorAll('#todos details[data-subtask-children]').forEach(detail=>{if(openSubtaskKeys.has(detail.dataset.subtaskChildren))detail.open=true});
  document.querySelectorAll('[data-todo-filter]').forEach(button=>{const active=button.dataset.todoFilter===todoFilter;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
  document.querySelectorAll('[data-todo-view]').forEach(button=>{const active=button.dataset.todoView===todoView;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
  const goalMinutes=goal*60,percent=goalMinutes?Math.min(100,Math.round(a/goalMinutes*100)):0;
