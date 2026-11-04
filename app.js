@@ -139,6 +139,7 @@ function render(){
  document.querySelectorAll('#todos details[data-subtask-children]').forEach(detail=>{if(openSubtaskKeys.has(detail.dataset.subtaskChildren))detail.open=true});
  document.querySelectorAll('[data-todo-filter]').forEach(button=>{const active=button.dataset.todoFilter===todoFilter;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
  document.querySelectorAll('[data-todo-view]').forEach(button=>{const active=button.dataset.todoView===todoView;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
+ document.querySelectorAll('[data-todo-category-filter]').forEach(button=>{const active=button.dataset.todoCategoryFilter===todoCategoryFilter;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active)});
  const goalMinutes=goal*60,percent=goalMinutes?Math.min(100,Math.round(a/goalMinutes*100)):0;
  $('goalLabel').textContent='목표 '+fmt(goalMinutes);$('goalProgress').style.width=percent+'%';
  $('goalMessage').textContent=a>=goalMinutes?'목표 달성! 실제 기록 '+fmt(a):'목표의 '+percent+'% · '+fmt(Math.max(0,goalMinutes-a))+' 남음';
@@ -182,6 +183,8 @@ document.addEventListener('click',e=>{
  if(filter){timelineFilter=filter.dataset.timelineFilter;renderTimeline();return}
  const todoFilterButton=e.target.closest('[data-todo-filter]');
  if(todoFilterButton){todoFilter=todoFilterButton.dataset.todoFilter;render();return}
+ const todoCategoryButton=e.target.closest('[data-todo-category-filter]');
+ if(todoCategoryButton){todoCategoryFilter=todoCategoryButton.dataset.todoCategoryFilter;render();return}
  const todoViewButton=e.target.closest('[data-todo-view]');
  if(todoViewButton){todoView=todoViewButton.dataset.todoView;render();return}
  const quick=e.target.closest('[data-add-hour]');
