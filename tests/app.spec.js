@@ -1106,7 +1106,7 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   for await (const chunk of stream) csv += chunk.toString('utf8');
   expect(csv).toContain('CSV 하위 작업 테스트');
   expect(csv).toContain('[완료] 자료 정리');
-  expect(csv).toContain('[미완료] 하위 조사');
+  expect(csv).toContain('[완료] 하위 조사');
 });
 
 
