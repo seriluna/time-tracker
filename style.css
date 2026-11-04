@@ -27,7 +27,7 @@ body{max-width:900px;padding:14px 12px 40px}
 
 .todo-category{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:6px;background:#eef0f8;color:#5059a8;font-size:11px;font-weight:600}.todo-category:empty{display:none}
 
-.todo-subtasks{grid-column:2/-1;margin-top:2px;min-width:0}.todo-subtasks summary{font-size:12px;color:#606781;cursor:pointer;padding:5px 0}.todo-subtask-list{display:grid;gap:5px;margin:6px 0}.todo-subtask{display:flex;align-items:center;gap:7px;font-size:13px;overflow-wrap:anywhere}.todo-subtask input{width:17px;height:17px;flex:0 0 auto}.todo-subtask.done span{text-decoration:line-through;color:#888}.todo-subtask-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.todo-subtask-add input{min-width:0;width:100%;padding:8px;border:1px solid #d9dce8;border-radius:8px;font:inherit;font-size:13px}.todo-subtask-add button{padding:7px 10px;font-size:12px}
+.todo-subtasks{grid-column:2/-1;margin-top:2px;min-width:0}.todo-subtasks summary,.todo-subtask-children summary{font-size:12px;color:#606781;cursor:pointer;padding:5px 0}.todo-subtask-list,.todo-subtask-children-list{display:grid;gap:7px;margin:6px 0}.todo-subtask-node{min-width:0;padding-left:12px;border-left:2px solid #e6e9f2}.todo-subtask-row{display:flex;align-items:center;gap:5px;min-width:0}.todo-subtask{display:flex;align-items:center;gap:7px;font-size:13px;overflow-wrap:anywhere;min-width:0;flex:1}.todo-subtask input{width:17px;height:17px;flex:0 0 auto}.todo-subtask.done span{text-decoration:line-through;color:#888}.todo-subtask-action{padding:5px 7px;font-size:11px;min-height:28px;flex:0 0 auto}.todo-subtask-children{margin-left:10px;min-width:0}.todo-subtask-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.todo-subtask-add input{min-width:0;width:100%;padding:8px;border:1px solid #d9dce8;border-radius:8px;font:inherit;font-size:13px}.todo-subtask-add button{padding:7px 10px;font-size:12px}
 
 /* Backup tools: prioritize CSV export and keep actions easy to tap on mobile. */
 .csv-range>b,.csv-range>p:first-of-type{grid-column:1/-1}.csv-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px}.csv-actions button{width:100%;font-size:13px;padding:10px}.csv-range>#selectAllCsvRange{grid-column:1/-1;background:#fff;border-style:dashed}.csv-range #csvRangeStatus{grid-column:1/-1;overflow-wrap:anywhere}.backup-actions{display:grid;grid-template-columns:1fr 1fr;margin:10px 0}.backup-actions button{font-size:13px;padding:10px;white-space:normal}.auto-backup-panel{margin-top:10px}@media(max-width:380px){.csv-actions,.backup-actions{grid-template-columns:1fr}}
@@ -51,3 +51,54 @@ body{max-width:900px;padding:14px 12px 40px}
 
 /* Todo list view: aligned actions and optional date grouping. */
 .todo-view-modes{display:flex;gap:6px;margin:0 0 10px}.todo-view-modes button{padding:7px 11px;font-size:12px}.todo-action{flex:0 0 56px;width:56px;height:36px;min-height:36px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;white-space:nowrap}.todo-date-group{display:grid;gap:8px}.todo-date-group+.todo-date-group{margin-top:12px}.todo-date-group>h3{margin:8px 2px 0;font-size:13px;color:#606781}
+
+
+/* Todo Step 1: keep quick entry focused and reveal optional settings on demand. */
+.todo-form{display:grid;gap:7px;margin:10px 0 12px}
+.todo-primary-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.todo-primary-row input{min-width:0;width:100%;font-size:15px;padding:12px}
+.todo-primary-row button{min-width:64px;padding:10px 16px}
+.todo-options{border:1px solid #e6e9f2;border-radius:10px;background:#fafbfe}
+.todo-options>summary{padding:9px 11px;font-size:12px;color:#697187;cursor:pointer;list-style:none}
+.todo-options>summary::-webkit-details-marker{display:none}
+.todo-options>summary:after{content:"＋";float:right;color:#5059a8}
+.todo-options[open]>summary:after{content:"−"}
+.todo-options-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 10px 10px}
+.todo-options-fields label{display:grid;gap:5px;font-size:11px;color:#697187}
+.todo-options-fields select,.todo-options-fields input{width:100%;min-width:0;padding:9px;font-size:13px}
+.todo-estimate-field{grid-column:1/-1}
+.todo-progress{display:grid;grid-template-columns:minmax(70px,1fr) auto;align-items:center;gap:8px;margin-top:6px;max-width:320px}
+.todo-progress-bar{width:100%;height:7px;border:0;border-radius:99px;overflow:hidden;accent-color:#6267b2}
+.todo-progress small{font-size:11px;color:#697187;white-space:nowrap}
+#cancelTodoEdit{justify-self:end;padding:7px 12px;font-size:12px}
+@media(max-width:380px){.todo-primary-row input{font-size:14px}.todo-primary-row button{min-width:58px;padding:9px 12px}}
+
+
+/* Todo Step 5: exclusion and linked time plans. */
+.todo-excluded-help{margin:0 0 10px;font-size:12px}
+.todo.excluded{opacity:.88;border-style:dashed}
+.todo-exclude-action{border-color:#d7dbea}
+.todo-filters{flex-wrap:wrap}
+
+.todo{flex-wrap:wrap}.todo>label{min-width:0}.todo-plan-action{flex:0 0 72px;width:72px}
+
+
+/* Todo Step 6: reusable task templates with nested subtasks. */
+.todo-template-panel{margin:14px 0;padding:12px;border:1px solid #e6e9f2;border-radius:12px;background:#fafbfe}
+.todo-template-panel h3{margin:0 0 5px;font-size:14px}
+.todo-template-panel>p{font-size:11px;margin:0 0 9px}
+.todo-template-card{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid #eceef4}
+.todo-template-info{flex:1;min-width:0;display:grid;gap:3px}
+.todo-template-info b{font-size:12px;overflow-wrap:anywhere}
+.todo-template-info small{font-size:10px;color:#72798b;line-height:1.4}
+.todo-template-card button{padding:7px 8px;font-size:11px;white-space:nowrap}
+@media(max-width:380px){.todo-template-card{flex-wrap:wrap}.todo-template-info{flex-basis:100%}.todo-template-card button{flex:1}}
+
+
+/* Todo Step 7: category, priority, search and nested progress navigation. */
+.todo-discovery-tools{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:7px;margin:10px 0 4px}
+.todo-discovery-tools label{display:grid;gap:4px;min-width:0;font-size:11px;color:#697187}
+.todo-discovery-tools input,.todo-discovery-tools select{width:100%;min-width:0;padding:9px;font-size:12px}
+.todo-filter-summary{font-size:11px;margin:4px 2px 10px}
+.todo-subtask-progress{display:block;margin:3px 0 5px 28px;font-size:10px;color:#747b90}
+@media(max-width:480px){.todo-discovery-tools{grid-template-columns:1fr 1fr}.todo-search-field{grid-column:1/-1}}

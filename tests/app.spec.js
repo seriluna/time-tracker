@@ -481,7 +481,7 @@ test('JSON 백업 복원 시 시간 기록과 할 일을 함께 복원하고 새
   await page.locator('[data-tab="todo"]').click();
   const afterReload = page.locator('#todos .todo').filter({ hasText: '복원된 할 일' });
   await expect(afterReload).toBeVisible();
-  await afterReload.locator('details.todo-subtasks summary').click();
+  await afterReload.locator('details[data-subtask-children$="|root"] > summary').click();
   await expect(afterReload.locator('input[data-subtask-check]')).toBeChecked();
 
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
@@ -917,9 +917,68 @@ test('이전 날짜의 미완료 할 일은 이후 날짜에도 표시되고 완
   await expect(page.locator('#todos')).not.toContainText('미완료 이월 테스트');
 });
 
+test('Todo 빠른 입력은 간결하게 표시하고 세부 설정은 접어서 제공함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoText')).toBeVisible();
+  await expect(page.locator('#todoSubmit')).toBeVisible();
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#todoCategory')).toBeHidden();
+  await expect(page.locator('#todoImportance')).toBeHidden();
+
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toBeVisible();
+  await expect(page.locator('#todoImportance')).toBeVisible();
+  await expect(page.locator('#todoOptionsSummary')).toContainText('업무');
+  await expect(page.locator('#todoOptionsSummary')).toContainText('높음');
+});
+
+test('Todo 분류와 중요도 선택은 다음 입력 및 새로고침 후에도 기억함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoText').fill('기본 설정 저장 테스트');
+  await page.locator('#todoSubmit').click();
+
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoCategory')).toBeHidden();
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('high');
+
+  await page.locator('#todoOptions summary').click();
+  await page.locator('#todoText').fill('기억한 기본 설정으로 추가');
+  await page.locator('#todoSubmit').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(todo => todo.text === '기억한 기본 설정으로 추가')).toMatchObject({ category: 'personal', importance: 'high' });
+});
+
+test('Todo 수정 진입 시 세부 설정이 열리고 취소하면 마지막 기본 설정으로 복귀함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('low');
+  await page.locator('#todoText').fill('수정 화면 확인');
+  await page.locator('#todoSubmit').click();
+
+  await page.locator('[data-todo-edit]').click();
+  await expect(page.locator('#todoOptions')).toHaveAttribute('open', '');
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('low');
+  await page.locator('#cancelTodoEdit').click();
+  await expect(page.locator('#todoOptions')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#todoText')).toHaveValue('');
+  await page.locator('#todoOptions summary').click();
+  await expect(page.locator('#todoCategory')).toHaveValue('personal');
+  await expect(page.locator('#todoImportance')).toHaveValue('low');
+});
+
 test('할 일 분류를 저장하고 마지막 분류를 다음 입력에도 기억함', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
   const sourceDate = await page.locator('#day').inputValue();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoCategory').selectOption('personal');
   await page.locator('#todoText').fill('개인 할 일 분류 테스트');
   await page.locator('#todoForm button[type="submit"]').click();
@@ -943,7 +1002,7 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.locator('#todoText').fill('프로젝트 준비');
   await page.locator('#todoForm button[type="submit"]').click();
   const todo = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await todo.locator('details.todo-subtasks summary').click();
+  await todo.locator('details[data-subtask-children$="|root"] > summary').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
   await expect(todo.locator('.todo-subtask-list')).toContainText('자료 정리');
@@ -954,8 +1013,8 @@ test('할 일 하위 작업을 추가하고 완료 상태를 새로고침 후에
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
   const restored = page.locator('#todos .todo').filter({ hasText: '프로젝트 준비' });
-  await restored.locator('details.todo-subtasks').locator('summary').click();
-  await expect(restored.locator('input[data-subtask-check]')).toBeChecked();
+  await restored.locator('details.todo-subtasks > summary').first().click();
+  await expect(restored.locator('input[data-subtask-check]').first()).toBeChecked();
 });
 
 
@@ -1027,10 +1086,16 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   await page.locator('#todoForm button[type="submit"]').click();
 
   const todo = page.locator('#todos .todo').filter({ hasText: 'CSV 하위 작업 테스트' });
-  await todo.locator('details.todo-subtasks summary').click();
+  await todo.locator('details[data-subtask-children$="|root"] > summary').click();
   await todo.locator('input[data-subtask-input]').fill('자료 정리');
   await todo.locator('button[data-subtask-add]').click();
-  await todo.locator('input[data-subtask-check]').check();
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const rootId = stored.todos.find(x => x.text === 'CSV 하위 작업 테스트').id;
+  const childId = stored.todos.find(x => x.id === rootId).subtasks[0].id;
+  await page.locator(`[data-subtask-children="${rootId}|${childId}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${rootId}|${childId}"]`).fill('하위 조사');
+  await page.locator(`[data-subtask-add="${rootId}|${childId}"]`).click();
+  await todo.locator('input[data-subtask-check]').first().check();
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('.tools-menu').locator('summary').click();
@@ -1041,6 +1106,7 @@ test('CSV 내보내기에 Todo 하위 작업과 완료 상태가 포함됨', asy
   for await (const chunk of stream) csv += chunk.toString('utf8');
   expect(csv).toContain('CSV 하위 작업 테스트');
   expect(csv).toContain('[완료] 자료 정리');
+  expect(csv).toContain('[완료] 하위 조사');
 });
 
 
@@ -1370,9 +1436,11 @@ test('전체 타임라인 +에서는 계획/실제를 선택할 수 있고 서�
 
 test('할 일 수정, 중요도 우선순위, 완료 날짜 및 전체 필터가 작동함', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoText').fill('낮은 우선순위');
   await page.locator('#todoImportance').selectOption('low');
   await page.locator('#todoForm button[type="submit"]').click();
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
   await page.locator('#todoText').fill('중요한 할 일');
   await page.locator('#todoImportance').selectOption('high');
   await page.locator('#todoForm button[type="submit"]').click();
@@ -1449,4 +1517,789 @@ test('할 일 완료·미완료 전체를 목록 또는 날짜별로 보고 수�
   });
   expect(sizes.editWidth).toBe(sizes.deleteWidth);
   expect(sizes.editHeight).toBe(sizes.deleteHeight);
+});
+
+
+test('Todo 하위 작업은 여러 단계로 추가·수정·완료·삭제되고 새로고침 후 유지됨', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('프로젝트 준비');
+  await page.locator('#todoSubmit').click();
+  const root = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.text === '프로젝트 준비').id);
+
+  await page.locator('.todo-subtasks').first().evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|root"]`).fill('자료 조사');
+  await page.locator(`[data-subtask-add="${root}|root"]`).click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const parent = saved.todos.find(x => x.id === root).subtasks[0].id;
+
+  await page.locator(`[data-subtask-children="${root}|${parent}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|${parent}"]`).fill('경쟁 제품 정리');
+  await page.locator(`[data-subtask-add="${root}|${parent}"]`).click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const child = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].id;
+
+  await page.locator(`[data-subtask-children="${root}|${child}"]`).evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${root}|${child}"]`).fill('가격 비교');
+  await page.locator(`[data-subtask-add="${root}|${child}"]`).click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const grandchild = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].id;
+  const childDetails = page.locator(`[data-subtask-children="${root}|${child}"]`);
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
+  await childDetails.locator(':scope > summary').click();
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeHidden();
+  await childDetails.locator(':scope > summary').click();
+  await expect(page.locator(`[data-subtask-input="${root}|${child}"]`)).toBeVisible();
+
+  await page.locator(`[data-subtask-check="${root}|${grandchild}"]`).check();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === root).subtasks[0].subtasks[0].subtasks[0].done).toBe(true);
+  page.once('dialog', dialog => dialog.accept('시장 가격 비교'));
+  await page.locator(`[data-subtask-edit="${root}|${child}"]`).click();
+  await expect(page.locator('#todos')).toContainText('시장 가격 비교');
+  await expect(page.locator('#todos')).toContainText('가격 비교');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator(`[data-subtask-del="${root}|${grandchild}"]`).click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('시장 가격 비교');
+  await expect(page.locator(`[data-subtask-check="${root}|${grandchild}"]`)).toHaveCount(0);
+
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const persisted = saved.todos.find(x => x.id === root).subtasks[0].subtasks[0];
+  expect(persisted.text).toBe('시장 가격 비교');
+  expect(persisted.subtasks).toEqual([]);
+});
+
+test('기존 1단계 subtasks 데이터는 변경 없이 읽고 하위 단계 추가 후에도 보존됨', async ({ page }) => {
+  const legacy = {
+    entries: [],
+    todos: [{
+      id: 'legacy-root',
+      date: await page.locator('#day').inputValue(),
+      text: '기존 할 일',
+      done: false,
+      subtasks: [{ id: 'legacy-child', text: '기존 하위 작업', done: true }]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), legacy);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('기존 하위 작업');
+  await page.locator('[data-subtask-children="legacy-root|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-children="legacy-root|legacy-child"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-input="legacy-root|legacy-child"]').fill('새로운 2단계 작업');
+  await page.locator('[data-subtask-add="legacy-root|legacy-child"]').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('기존 하위 작업');
+  await expect(page.locator('#todos')).toContainText('새로운 2단계 작업');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks[0].text).toBe('새로운 2단계 작업');
+});
+
+test('중첩 Todo 백업은 복원되고 하위 작업 ID 중복 백업은 거부하며 기존 데이터를 보존함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const original = { entries: [], todos: [{ id: 'keep-root', date, text: '보존할 할 일', done: false }] };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), original);
+  await page.reload();
+  await page.locator('.tools-menu summary').click();
+
+  const invalid = {
+    entries: [],
+    todos: [{
+      id: 'duplicate-root',
+      date,
+      text: '중복 ID 백업',
+      done: false,
+      subtasks: [{ id: 'same-id', text: '부모 하위 작업', done: false, subtasks: [{ id: 'same-id', text: '중첩 하위 작업', done: false }] }]
+    }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'duplicate-nested-todo.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(invalid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].text)).toBe('보존할 할 일');
+
+  const valid = {
+    entries: [],
+    todos: [{
+      id: 'nested-root',
+      date,
+      text: '복원할 계층 할 일',
+      done: false,
+      subtasks: [{ id: 'nested-child-1', text: '1단계', done: false, subtasks: [{ id: 'nested-child-2', text: '2단계', done: true, subtasks: [{ id: 'nested-child-3', text: '3단계', done: false }] }] }]
+    }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'nested-todo.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(valid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todos')).toContainText('복원할 계층 할 일');
+  await expect(page.locator('#todos')).toContainText('3단계');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].subtasks[0].subtasks[0].subtasks[0].text).toBe('3단계');
+});
+
+
+test('Todo 예상 소요시간은 저장·수정·삭제되고 하위 작업 완료율로 진행률을 계산함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('보고서 작성');
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoEstimate').fill('90');
+  expect(await page.locator('#todoForm').evaluate(form => form.checkValidity())).toBe(true);
+  await page.locator('#todoForm').evaluate(form => form.requestSubmit());
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = saved.todos.find(x => x.text === '보고서 작성').id;
+  expect(saved.todos.find(x => x.id === todoId).estimatedMinutes).toBe(90);
+
+  const todo = page.locator('#todos .todo').filter({ hasText: '보고서 작성' });
+  await todo.locator('.todo-subtasks').evaluate(el => { el.open = true; });
+  await page.locator(`[data-subtask-input="${todoId}|root"]`).fill('초안 작성');
+  await page.locator(`[data-subtask-add="${todoId}|root"]`).click();
+  await page.locator(`[data-subtask-input="${todoId}|root"]`).fill('최종 검토');
+  await page.locator(`[data-subtask-add="${todoId}|root"]`).click();
+
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 0% · 완료 0/2');
+  await todo.locator('input[data-subtask-check]').first().check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 50% · 완료 1/2');
+  await todo.locator('input[data-subtask-check]').nth(1).check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 100% · 완료 2/2');
+  await expect(todo).toContainText('예상 1시간 30분');
+
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  const restored = page.locator('#todos .todo').filter({ hasText: '보고서 작성' });
+  await expect(restored).toContainText('예상 1시간 30분');
+  await expect(restored.locator('.todo-progress')).toContainText('진행률 100% · 완료 2/2');
+
+  await restored.locator('[data-todo-edit]').click();
+  await expect(page.locator('#todoEstimate')).toHaveValue('90');
+  await page.locator('#todoEstimate').fill('120');
+  await page.locator('#todoSubmit').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === todoId).estimatedMinutes).toBe(120);
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#csvExport').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  let csv = '';
+  for await (const chunk of stream) csv += chunk.toString('utf8');
+  expect(csv).toContain('예상 소요시간(분)');
+  expect(csv).toContain('120');
+  expect(csv).toContain('100');
+});
+
+test('Todo 예상 소요시간을 비우면 선택 필드가 제거되고 잘못된 백업 값은 기존 데이터를 보존하며 거부함', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('예상 시간 수정 테스트');
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoEstimate').fill('45');
+  expect(await page.locator('#todoForm').evaluate(form => form.checkValidity())).toBe(true);
+  await page.locator('#todoForm').evaluate(form => form.requestSubmit());
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = saved.todos.find(x => x.text === '예상 시간 수정 테스트').id;
+
+  await page.locator(`[data-todo-edit="${todoId}"]`).click();
+  await page.locator('#todoEstimate').fill('');
+  await page.locator('#todoSubmit').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === todoId)).not.toHaveProperty('estimatedMinutes');
+
+  await page.locator('.tools-menu summary').click();
+  const invalid = {
+    entries: [],
+    todos: [{ id: 'invalid-estimate', date: await page.locator('#day').inputValue(), text: '잘못된 예상 시간', done: false, estimatedMinutes: 0 }]
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-todo-estimate.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(invalid), 'utf8')
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].text)).toBe('예상 시간 수정 테스트');
+});
+
+
+test('중첩 하위 작업 진행률은 가장 깊은 작업만 집계해 부모 작업을 중복 계산하지 않음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'progress-root',
+      date,
+      text: '중첩 진행률 확인',
+      done: false,
+      subtasks: [
+        {
+          id: 'progress-parent',
+          text: '자료 조사',
+          done: false,
+          subtasks: [
+            { id: 'progress-leaf-1', text: '자료 수집', done: false },
+            { id: 'progress-leaf-2', text: '자료 정리', done: false }
+          ]
+        },
+        { id: 'progress-leaf-3', text: '보고서 작성', done: false }
+      ]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  const todo = page.locator('#todos .todo').filter({ hasText: '중첩 진행률 확인' });
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 0% · 완료 0/3');
+  await page.locator('[data-subtask-children="progress-root|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-children="progress-root|progress-parent"]').evaluate(el => { el.open = true; });
+
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-1"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 33% · 완료 1/3');
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-2"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 67% · 완료 2/3');
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-3"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 100% · 완료 3/3');
+});
+
+
+test('하위 작업 전체 완료 시 모든 상위 Todo가 자동 완료되고 미완료로 바꾸면 완료일과 함께 되돌아감', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'auto-root',
+      date,
+      text: '프로젝트 전체',
+      done: false,
+      subtasks: [
+        {
+          id: 'auto-parent',
+          text: '자료 조사',
+          done: false,
+          subtasks: [
+            { id: 'auto-leaf-1', text: '자료 수집', done: false },
+            { id: 'auto-leaf-2', text: '자료 정리', done: false }
+          ]
+        },
+        { id: 'auto-leaf-3', text: '보고서 작성', done: false }
+      ]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  const getSaved = () => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const openTree = async () => {
+    await page.locator('[data-subtask-children="auto-root|root"]').evaluate(el => { el.open = true; });
+    await page.locator('[data-subtask-children="auto-root|auto-parent"]').evaluate(el => { el.open = true; });
+  };
+  await openTree();
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-1"]').check();
+  let saved = await getSaved();
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-2"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+  expect(saved.todos[0].done).toBe(false);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-3"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+
+  await page.locator('[data-subtask-check="auto-root|auto-leaf-1"]').uncheck();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[1].done).toBe(true);
+
+  await page.locator('[data-subtask-check="auto-root|auto-parent"]').check();
+  saved = await getSaved();
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks.every(x => x.done)).toBe(true);
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+
+  await page.reload();
+  saved = await getSaved();
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].doneAt).toBe(date);
+});
+
+test('상위 Todo를 직접 완료하거나 취소하면 모든 중첩 하위 작업 상태가 함께 변경됨', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'cascade-root',
+      date,
+      text: '상위 작업 직접 제어',
+      done: false,
+      subtasks: [{
+        id: 'cascade-parent',
+        text: '하위 묶음',
+        done: false,
+        subtasks: [{ id: 'cascade-leaf', text: '세부 작업', done: false }]
+      }]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('[data-check="cascade-root"]').check();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].subtasks[0].subtasks[0].done).toBe(true);
+  expect(saved.todos[0].doneAt).toBe(date);
+
+  await page.locator('[data-check="cascade-root"]').uncheck();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].done).toBe(false);
+  expect(saved.todos[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].done).toBe(false);
+  expect(saved.todos[0].subtasks[0]).not.toHaveProperty('doneAt');
+  expect(saved.todos[0].subtasks[0].subtasks[0].done).toBe(false);
+});
+
+
+test('Todo 제외는 데이터를 삭제하지 않고 별도 필터에서 복원할 수 있음', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('보관할 작업');
+  await page.locator('#todoSubmit').click();
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = before.todos.find(x => x.text === '보관할 작업').id;
+
+  await page.locator('[data-todo-exclude="' + todoId + '"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0].excluded).toBe(true);
+  await expect(page.locator('#todos')).not.toContainText('보관할 작업');
+
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+  await page.locator('[data-todo-restore="' + todoId + '"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0]).not.toHaveProperty('excluded');
+  await page.locator('[data-todo-filter="all"]').click();
+  await expect(page.locator('#todos')).toContainText('보관할 작업');
+});
+
+test('Todo에서 예상 시간을 기본값으로 계획을 만들고 링크를 보존하며 계획 시간만 중복 방지함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [
+      { id: 'existing-plan', date, name: '기존 계획', start: '09:00', end: '10:00', kind: 'planned' },
+      { id: 'overlap-actual', date, name: '실제 기록', start: '10:00', end: '11:00', kind: 'actual' }
+    ],
+    todos: [{ id: 'linked-todo', date, text: '제안서 작성', done: false, estimatedMinutes: 75 }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="linked-todo"]').click();
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const plan = saved.entries.find(x => x.todoId === 'linked-todo');
+  expect(plan).toMatchObject({ date, name: '제안서 작성', start: '10:00', end: '11:15', kind: 'planned', todoId: 'linked-todo' });
+  expect(saved.entries.find(x => x.id === 'overlap-actual')).toBeTruthy();
+  await expect(page.locator('#todos')).toContainText('연결 계획 1개');
+
+  await page.reload();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.todoId === 'linked-todo')).toBeTruthy();
+
+  await page.locator('[data-tab="record"]').click();
+  await page.locator('[data-edit="' + plan.id + '"]').click();
+  await page.locator('#entryAdvancedFields').evaluate(el => { el.open = true; });
+  await page.locator('#kind').selectOption('actual');
+  await page.locator('#start').fill('11:00');
+  await page.locator('#end').fill('12:15');
+  await page.locator('#saveEntry').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const converted = saved.entries.find(x => x.id === plan.id);
+  expect(converted.kind).toBe('actual');
+  expect(converted).not.toHaveProperty('todoId');
+  expect(saved.todos.find(x => x.id === 'linked-todo')).toBeTruthy();
+});
+
+test('연결된 Todo 삭제 시 계획 기록은 보존하고 연결만 해제하며 잘못된 링크 백업은 거부함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [{ id: 'linked-plan', date, name: '독립 보존 계획', start: '08:00', end: '09:00', kind: 'planned', todoId: 'delete-todo' }],
+    todos: [{ id: 'delete-todo', date, text: '삭제할 Todo', done: false }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-del="delete-todo"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(0);
+  expect(saved.entries).toHaveLength(1);
+  expect(saved.entries[0].name).toBe('독립 보존 계획');
+  expect(saved.entries[0]).not.toHaveProperty('todoId');
+
+  const invalid = { entries: [{ id: 'bad-plan', date, name: '잘못된 연결', start: '08:00', end: '09:00', kind: 'planned', todoId: 'missing-todo' }], todos: [] };
+  await page.evaluate(data => {
+    const file = new File([JSON.stringify(data)], 'invalid-link.json', { type: 'application/json' });
+    const input = document.querySelector('#importFile');
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, invalid);
+  await expect(page.locator('#importPreview')).toContainText('데이터에 오류');
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries[0].name).toBe('독립 보존 계획');
+});
+
+
+test('예상 시간이 없는 Todo는 60분 계획을 만들고 24시간 초과 예상은 안전하게 거부함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [
+      { id: 'default-duration', date, text: '시간 미설정 작업', done: false },
+      { id: 'too-long-duration', date, text: '장시간 작업', done: false, estimatedMinutes: 1440 }
+    ]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="default-duration"]').click();
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.find(x => x.todoId === 'default-duration')).toMatchObject({
+    start: '09:00', end: '10:00', kind: 'planned'
+  });
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="too-long-duration"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.entries.filter(x => x.todoId === 'too-long-duration')).toHaveLength(0);
+});
+
+
+test('Todo 템플릿은 예상 시간과 중첩 하위 작업을 저장하고 새 ID로 선택 날짜에 불러옴', async ({ page }) => {
+  const today = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [{
+      id: 'template-source',
+      date,
+      text: '주간 리포트',
+      done: true,
+      doneAt: date,
+      category: 'work',
+      importance: 'high',
+      estimatedMinutes: 90,
+      subtasks: [{
+        id: 'template-parent',
+        text: '데이터 수집',
+        done: true,
+        subtasks: [{ id: 'template-leaf', text: '매출 정리', done: true }]
+      }]
+    }]
+  })), today);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  page.once('dialog', dialog => dialog.accept('주간 리포트 템플릿'));
+  await page.locator('[data-todo-template-save="template-source"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('주간 리포트 템플릿');
+  const templateStore = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates')));
+  expect(templateStore).toHaveLength(1);
+  expect(templateStore[0]).toMatchObject({
+    name: '주간 리포트 템플릿',
+    text: '주간 리포트',
+    category: 'work',
+    importance: 'high',
+    estimatedMinutes: 90
+  });
+  expect(templateStore[0].subtasks[0].subtasks[0].text).toBe('매출 정리');
+
+  await page.locator('#day').fill('2026-11-05');
+  await page.locator('[data-todo-template-load="' + templateStore[0].id + '"]').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(2);
+  const loaded = saved.todos.find(x => x.date === '2026-11-05');
+  expect(loaded).toMatchObject({
+    text: '주간 리포트',
+    done: false,
+    category: 'work',
+    importance: 'high',
+    estimatedMinutes: 90
+  });
+  expect(loaded).not.toHaveProperty('doneAt');
+  expect(loaded.subtasks[0].done).toBe(false);
+  expect(loaded.subtasks[0].subtasks[0].done).toBe(false);
+  expect(loaded.id).not.toBe('template-source');
+  expect(loaded.subtasks[0].id).not.toBe('template-parent');
+  expect(loaded.subtasks[0].subtasks[0].id).not.toBe('template-leaf');
+  expect(saved.todos.find(x => x.id === 'template-source').done).toBe(true);
+  expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toContain('주간 리포트');
+});
+
+test('Todo 템플릿은 새로고침 후 유지되고 삭제해도 기존 Todo 데이터는 변경하지 않음', async ({ page }) => {
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('반복 업무');
+  await page.locator('#todoSubmit').click();
+  const todoId = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].id);
+  page.once('dialog', dialog => dialog.accept('반복 업무 템플릿'));
+  await page.locator('[data-todo-template-save="' + todoId + '"]').click();
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('반복 업무 템플릿');
+  const templateId = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates'))[0].id);
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-template-del="' + templateId + '"]').click();
+  await expect(page.locator('#todoTemplates')).not.toContainText('반복 업무 템플릿');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos).toHaveLength(1);
+  expect(saved.todos[0].text).toBe('반복 업무');
+});
+
+test('손상된 Todo 템플릿 저장 데이터는 덮어쓰지 않고 기존 시간 기록과 Todo를 보존함', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [],
+      todos: [{ id: 'safe-existing-todo', date: document.querySelector('#day').value, text: '기존 데이터', done: false }]
+    }));
+    localStorage.setItem('time-tracker-todo-templates', '{broken json');
+  });
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await expect(page.locator('#todoTemplates')).toContainText('올바르지 않아 읽기 전용');
+  const before = await page.evaluate(() => localStorage.getItem('time-tracker-todo-templates'));
+  page.once('dialog', dialog => dialog.accept('새 템플릿'));
+  await page.locator('[data-todo-template-save="safe-existing-todo"]').click();
+  const after = await page.evaluate(() => localStorage.getItem('time-tracker-todo-templates'));
+  expect(after).toBe(before);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos[0].text).toBe('기존 데이터');
+});
+
+
+test('Todo 분류·중요도 필터를 조합하고 하위 작업 이름으로 검색할 수 있음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [
+      { id: 'filter-work-high', date, text: '주간 보고서', done: false, category: 'work', importance: 'high', subtasks: [{ id: 'filter-child', text: '매출 데이터 확인', done: false }] },
+      { id: 'filter-work-low', date, text: '자료 정리', done: false, category: 'work', importance: 'low' },
+      { id: 'filter-personal-high', date, text: '운동 계획', done: false, category: 'personal', importance: 'high' },
+      { id: 'filter-personal-low', date, text: '여행 예약', done: false, category: 'personal', importance: 'low' }
+    ]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await page.locator('#todoCategoryFilter').selectOption('personal');
+  await page.locator('#todoImportanceFilter').selectOption('high');
+  await expect(page.locator('#todos .todo')).toHaveCount(1);
+  await expect(page.locator('#todos')).toContainText('운동 계획');
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 1 / 4개');
+
+  await page.locator('#todoCategoryFilter').selectOption('all');
+  await page.locator('#todoImportanceFilter').selectOption('all');
+  await page.locator('#todoSearch').fill('매출 데이터');
+  await expect(page.locator('#todos .todo')).toHaveCount(1);
+  await expect(page.locator('#todos')).toContainText('주간 보고서');
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 1 / 4개');
+  await page.locator('#todoSearch').fill('없는 검색어');
+  await expect(page.locator('#todos .todo')).toHaveCount(0);
+  await expect(page.locator('#todoFilterSummary')).toHaveText('표시 0 / 4개');
+});
+
+test('각 중첩 하위 작업 그룹에 해당 단계의 진행률을 표시하고 완료 변경 시 갱신함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [{
+      id: 'progress-root',
+      date,
+      text: '전체 프로젝트',
+      done: false,
+      subtasks: [
+        {
+          id: 'progress-parent',
+          text: '시장 조사',
+          done: false,
+          subtasks: [
+            { id: 'progress-leaf-a', text: '경쟁사 분석', done: true },
+            { id: 'progress-leaf-b', text: '가격 조사', done: false }
+          ]
+        },
+        { id: 'progress-leaf-c', text: '결과 요약', done: false }
+      ]
+    }]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await expect(page.locator('[data-subtask-progress="progress-root|progress-parent"]')).toHaveText('진행률 50% · 완료 1/2');
+  const root = page.locator('#todos .todo').filter({ hasText: '전체 프로젝트' });
+  await expect(root.locator('.todo-progress')).toContainText('진행률 33% · 완료 1/3');
+
+  await page.locator('[data-subtask-children="progress-root|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-children="progress-root|progress-parent"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-b"]').check();
+  await expect(page.locator('[data-subtask-progress="progress-root|progress-parent"]')).toHaveText('진행률 100% · 완료 2/2');
+  await expect(root.locator('.todo-progress')).toContainText('진행률 67% · 완료 2/3');
+});
+
+
+test('Step 8 통합 흐름: Todo 작성부터 하위 작업·계획 연결·제외 복원·JSON/CSV 백업까지 보존', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('[data-tab="todo"]').click();
+
+  await page.locator('#todoText').fill('고객 제안서 준비');
+  await page.locator('#todoOptions').evaluate(el => { el.open = true; });
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoEstimate').fill('45');
+  await page.locator('#todoSubmit').click();
+
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const todoId = saved.todos.find(x => x.text === '고객 제안서 준비').id;
+  await page.locator('[data-subtask-children="' + todoId + '|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-input="' + todoId + '|root"]').fill('시장 자료');
+  await page.locator('[data-subtask-add="' + todoId + '|root"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const subtaskId = saved.todos.find(x => x.id === todoId).subtasks[0].id;
+  await page.locator('[data-subtask-children="' + todoId + '|' + subtaskId + '"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-input="' + todoId + '|' + subtaskId + '"]').fill('경쟁사 비교');
+  await page.locator('[data-subtask-add="' + todoId + '|' + subtaskId + '"]').click();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-plan="' + todoId + '"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  const plan = saved.entries.find(x => x.todoId === todoId);
+  expect(plan).toMatchObject({ date, name: '고객 제안서 준비', start: '09:00', end: '09:45', kind: 'planned' });
+  expect(saved.todos.find(x => x.id === todoId).subtasks[0].subtasks[0].text).toBe('경쟁사 비교');
+
+  await page.locator('[data-todo-exclude="' + todoId + '"]').click();
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await expect(page.locator('#todos')).toContainText('고객 제안서 준비');
+  await page.locator('[data-todo-restore="' + todoId + '"]').click();
+  await page.locator('[data-todo-filter="all"]').click();
+
+  await page.locator('.tools-menu').evaluate(el => { el.open = true; });
+  const jsonDownloadPromise = page.waitForEvent('download');
+  await page.locator('#export').click();
+  const jsonDownload = await jsonDownloadPromise;
+  const jsonStream = await jsonDownload.createReadStream();
+  let jsonText = '';
+  for await (const chunk of jsonStream) jsonText += chunk.toString('utf8');
+  const backup = JSON.parse(jsonText);
+  expect(backup.entries.find(x => x.todoId === todoId)).toBeTruthy();
+  expect(backup.todos.find(x => x.id === todoId).subtasks[0].subtasks[0].text).toBe('경쟁사 비교');
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-del="' + todoId + '"]').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.some(x => x.id === todoId)).toBe(false);
+
+  await page.locator('#importFile').setInputFiles({
+    name: 'step8-roundtrip.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(jsonText, 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
+  expect(saved.todos.find(x => x.id === todoId).subtasks[0].subtasks[0].text).toBe('경쟁사 비교');
+  expect(saved.entries.find(x => x.todoId === todoId)).toBeTruthy();
+
+  const csvDownloadPromise = page.waitForEvent('download');
+  await page.locator('#csvExport').click();
+  const csvDownload = await csvDownloadPromise;
+  const csvStream = await csvDownload.createReadStream();
+  let csvText = '';
+  for await (const chunk of csvStream) csvText += chunk.toString('utf8');
+  expect(csvText).toContain('연결 Todo');
+  expect(csvText).toContain('고객 제안서 준비');
+});
+
+test('Step 8 모바일 Todo 화면은 320px에서도 필터·검색·템플릿·중첩 작업 가로 넘침이 없음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => {
+    localStorage.setItem('time-tracker-v1', JSON.stringify({
+      entries: [{ id: 'mobile-plan', date, name: '모바일 계획', start: '09:00', end: '10:00', kind: 'planned', todoId: 'mobile-todo' }],
+      todos: [{
+        id: 'mobile-todo',
+        date,
+        text: '모바일 화면에서 확인할 매우 긴 프로젝트 할 일 이름입니다',
+        done: false,
+        category: 'personal',
+        importance: 'high',
+        estimatedMinutes: 90,
+        subtasks: [{
+          id: 'mobile-parent',
+          text: '중첩된 하위 작업도 화면 안에 표시되어야 합니다',
+          done: false,
+          subtasks: [{ id: 'mobile-leaf', text: '매우 긴 하위 작업 이름이 모바일 화면에서 잘리는지 확인합니다', done: false }]
+        }]
+      }]
+    }));
+    localStorage.setItem('time-tracker-todo-templates', JSON.stringify([{
+      id: 'mobile-template',
+      name: '모바일에서 불러올 템플릿 이름',
+      text: '모바일 프로젝트 템플릿',
+      category: 'personal',
+      importance: 'high',
+      estimatedMinutes: 90,
+      subtasks: [{ text: '템플릿 하위 작업' }]
+    }]));
+  }, date);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('[data-subtask-children="mobile-todo|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-children="mobile-todo|mobile-parent"]').evaluate(el => { el.open = true; });
+
+  const sizes = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+    todoPanel: document.querySelector('#todoPanel').scrollWidth,
+    todos: document.querySelector('#todos').scrollWidth
+  }));
+  expect(sizes.document).toBeLessThanOrEqual(sizes.viewport);
+  expect(sizes.body).toBeLessThanOrEqual(sizes.viewport);
+  expect(sizes.todoPanel).toBeLessThanOrEqual(sizes.viewport);
+  expect(sizes.todos).toBeLessThanOrEqual(sizes.viewport);
+
+  await page.locator('[data-todo-filter="excluded"]').click();
+  await page.locator('#todoSearch').fill('모바일');
+  const filteredSizes = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth
+  }));
+  expect(filteredSizes.document).toBeLessThanOrEqual(filteredSizes.viewport);
 });
