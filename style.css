@@ -79,3 +79,5 @@ body{max-width:900px;padding:14px 12px 40px}
 .todo.excluded{opacity:.88;border-style:dashed}
 .todo-exclude-action{border-color:#d7dbea}
 .todo-filters{flex-wrap:wrap}
+
+.todo{flex-wrap:wrap}.todo>label{min-width:0}.todo-plan-action{flex:0 0 72px;width:72px}
