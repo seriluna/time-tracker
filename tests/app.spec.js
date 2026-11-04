@@ -2219,12 +2219,8 @@ test('Step 8 통합 흐름: Todo 작성부터 하위 작업·계획 연결·제�
   expect(backup.entries.find(x => x.todoId === todoId)).toBeTruthy();
   expect(backup.todos.find(x => x.id === todoId).subtasks[0].subtasks[0].text).toBe('경쟁사 비교');
 
-  await page.locator('[data-todo-del="' + todoId + '"]').click({ noWaitAfter: true }).catch(() => {});
-  // The delete confirmation is handled explicitly below if the Todo remains visible.
-  if (await page.locator('[data-todo-del="' + todoId + '"]').count()) {
-    page.once('dialog', dialog => dialog.accept());
-    await page.locator('[data-todo-del="' + todoId + '"]').click();
-  }
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('[data-todo-del="' + todoId + '"]').click();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')));
   expect(saved.todos.some(x => x.id === todoId)).toBe(false);
 
