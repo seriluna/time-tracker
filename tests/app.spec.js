@@ -1731,3 +1731,44 @@ test('Todo 예상 소요시간을 비우면 선택 필드가 제거되고 잘못
   await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나 데이터에 오류가 있습니다');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].text)).toBe('예상 시간 수정 테스트');
 });
+
+
+test('중첩 하위 작업 진행률은 가장 깊은 작업만 집계해 부모 작업을 중복 계산하지 않음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const fixture = {
+    entries: [],
+    todos: [{
+      id: 'progress-root',
+      date,
+      text: '중첩 진행률 확인',
+      done: false,
+      subtasks: [
+        {
+          id: 'progress-parent',
+          text: '자료 조사',
+          done: false,
+          subtasks: [
+            { id: 'progress-leaf-1', text: '자료 수집', done: false },
+            { id: 'progress-leaf-2', text: '자료 정리', done: false }
+          ]
+        },
+        { id: 'progress-leaf-3', text: '보고서 작성', done: false }
+      ]
+    }]
+  };
+  await page.evaluate(data => localStorage.setItem('time-tracker-v1', JSON.stringify(data)), fixture);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  const todo = page.locator('#todos .todo').filter({ hasText: '중첩 진행률 확인' });
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 0% · 완료 0/3');
+  await page.locator('[data-subtask-children="progress-root|root"]').evaluate(el => { el.open = true; });
+  await page.locator('[data-subtask-children="progress-root|progress-parent"]').evaluate(el => { el.open = true; });
+
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-1"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 33% · 완료 1/3');
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-2"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 67% · 완료 2/3');
+  await page.locator('[data-subtask-check="progress-root|progress-leaf-3"]').check();
+  await expect(todo.locator('.todo-progress')).toContainText('진행률 100% · 완료 3/3');
+});
