@@ -2332,3 +2332,14 @@ test('Todo 분류 필터를 상태 필터와 별도로 항상 표시하고 선�
   await page.locator('[data-todo-category-filter="all"]').click();
   await expect(page.locator('#todos .todo')).toHaveCount(2);
 });
+
+test('시간 입력 필드는 한국어 기기에서도 24시간 표시 로캘을 사용함', async ({ page }) => {
+  for (const selector of ['#start', '#end', '#templateStart', '#templateEnd']) {
+    await expect(page.locator(selector)).toHaveAttribute('type', 'time');
+    await expect(page.locator(selector)).toHaveAttribute('lang', 'en-GB');
+  }
+  await page.locator('#start').fill('05:00');
+  await page.locator('#end').fill('17:25');
+  await expect(page.locator('#start')).toHaveValue('05:00');
+  await expect(page.locator('#end')).toHaveValue('17:25');
+});

@@ -182,3 +182,11 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Added Playwright coverage for the visible category controls, active-state accessibility, and filtering results; updated the existing combined category/priority test to use the visible controls.
 - Bumped service-worker cache from v38 to v40 to refresh installed PWA assets after the separate v39 24-hour-time branch; no localStorage schema, Todo data, or user records changed.
 - This change is isolated on `feat/visible-todo-category-filters`; PR/CI and deployment verification are still pending.
+
+## 24-hour time input display consistency (2026-11-06)
+- Rebased the time-input locale fix onto the latest main after the Todo category-filter update.
+- Applied `lang="en-GB"` to all four native time inputs (record start/end and template start/end), requesting 24-hour presentation while retaining native `HH:mm` values.
+- Added Playwright coverage for all four locale attributes and values such as `05:00` and `17:25`.
+- Bumped the service-worker cache from v40 to v41 so installed PWA clients can refresh the updated HTML.
+- No localStorage key, saved record, Todo data, or data schema was changed. Android's actual native picker presentation still requires physical-device confirmation after deployment.
+- Rebased work is isolated on `fix/24-hour-time-inputs-v2`; it has not been merged or deployed.
