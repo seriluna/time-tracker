@@ -190,3 +190,13 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - Bumped the service-worker cache from v40 to v41 so installed PWA clients can refresh the updated HTML.
 - No localStorage key, saved record, Todo data, or data schema was changed. Android's actual native picker presentation still requires physical-device confirmation after deployment.
 - Rebased work is isolated on `fix/24-hour-time-inputs-v2`; it has not been merged or deployed.
+
+
+## 24-hour time input display consistency — post-merge verification (2026-11-06)
+- PR #54 merged to `main` via squash at `12931ad9ac292fe89be802fcf79a6e5a9d8783ff`.
+- Post-merge Browser tests workflow [42148380006](https://github.com/seriluna/time-tracker/actions/runs/42148380006) completed successfully.
+- GitHub Pages build and deployment workflow [42148379788](https://github.com/seriluna/time-tracker/actions/runs/42148379788) completed successfully for the merge commit.
+- The change requests 24-hour presentation through `lang="en-GB"` on the four native time inputs and retains native `HH:mm` values. Playwright coverage passed for the locale attributes and values including `05:00` and `17:25`.
+- No localStorage key, saved record, Todo data, time value, or data schema was changed.
+- Android/Samsung native picker presentation still requires user confirmation on a physical device; automated browser tests do not prove OS-level picker rendering.
+- PR #54 supersedes stale PR #52. Do not merge PR #52.
