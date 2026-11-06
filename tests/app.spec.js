@@ -2118,13 +2118,13 @@ test('Todo 분류·중요도 필터를 조합하고 하위 작업 이름으로 �
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
 
-  await page.locator('#todoCategoryFilter').selectOption('personal');
+  await page.locator('[data-todo-category-filter="personal"]').click();
   await page.locator('#todoImportanceFilter').selectOption('high');
   await expect(page.locator('#todos .todo')).toHaveCount(1);
   await expect(page.locator('#todos')).toContainText('운동 계획');
   await expect(page.locator('#todoFilterSummary')).toHaveText('표시 1 / 4개');
 
-  await page.locator('#todoCategoryFilter').selectOption('all');
+  await page.locator('[data-todo-category-filter="all"]').click();
   await page.locator('#todoImportanceFilter').selectOption('all');
   await page.locator('#todoSearch').fill('매출 데이터');
   await expect(page.locator('#todos .todo')).toHaveCount(1);
@@ -2302,4 +2302,33 @@ test('Step 8 모바일 Todo 화면은 320px에서도 필터·검색·템플릿·
     document: document.documentElement.scrollWidth
   }));
   expect(filteredSizes.document).toBeLessThanOrEqual(filteredSizes.viewport);
+});
+
+
+test('Todo 분류 필터를 상태 필터와 별도로 항상 표시하고 선택 결과를 갱신함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.evaluate(date => localStorage.setItem('time-tracker-v1', JSON.stringify({
+    entries: [],
+    todos: [
+      { id: 'category-visible-work', date, text: '업무 할 일', done: false, category: 'work' },
+      { id: 'category-visible-personal', date, text: '개인 할 일', done: false, category: 'personal' }
+    ]
+  })), date);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await expect(page.locator('[data-todo-category-filter]')).toHaveCount(3);
+  await expect(page.locator('#todos .todo')).toHaveCount(2);
+  await page.locator('[data-todo-category-filter="work"]').click();
+  await expect(page.locator('#todos .todo')).toHaveCount(1);
+  await expect(page.locator('#todos')).toContainText('업무 할 일');
+  await expect(page.locator('#todos')).not.toContainText('개인 할 일');
+  await expect(page.locator('[data-todo-category-filter="work"]')).toHaveAttribute('aria-pressed', 'true');
+
+  await page.locator('[data-todo-category-filter="personal"]').click();
+  await expect(page.locator('#todos')).toContainText('개인 할 일');
+  await expect(page.locator('#todos')).not.toContainText('업무 할 일');
+
+  await page.locator('[data-todo-category-filter="all"]').click();
+  await expect(page.locator('#todos .todo')).toHaveCount(2);
 });
