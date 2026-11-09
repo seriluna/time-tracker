@@ -1,0 +1,171 @@
+/* Time Tracker Design System v1 — Lifestyle Wellness / Balanced
+   This layer intentionally styles existing components without changing app behavior. */
+:root {
+  color-scheme: light;
+  --tt-bg: #F8F5F0;
+  --tt-surface: #FFFEFC;
+  --tt-surface-soft: #F4EDE7;
+  --tt-surface-muted: #F7F2ED;
+  --tt-text: #4B4947;
+  --tt-muted: #857A73;
+  --tt-border: #E7DDD4;
+  --tt-primary: #9C656B;
+  --tt-primary-hover: #87545A;
+  --tt-primary-soft: #F3E5E3;
+  --tt-rose: #D9A8A3;
+  --tt-sage: #B9C8B5;
+  --tt-sage-ink: #526B55;
+  --tt-blue: #D7DFE8;
+  --tt-blue-ink: #586C80;
+  --tt-sand: #E8C9A8;
+  --tt-lavender: #E7D6DF;
+  --tt-danger: #A12B35;
+  --tt-shadow: 0 5px 18px rgba(89, 66, 53, .06);
+}
+
+html { background: var(--tt-bg); }
+body {
+  color: var(--tt-text);
+  background: var(--tt-bg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+  line-height: 1.5;
+}
+h1, h2, h3, h4, strong, b { color: var(--tt-text); }
+h1 { letter-spacing: -.035em; }
+h2 { letter-spacing: -.02em; }
+.muted, .meta { color: var(--tt-muted); }
+::selection { color: var(--tt-text); background: var(--tt-primary-soft); }
+
+button, input, select, textarea {
+  color: var(--tt-text);
+  border-color: var(--tt-border);
+  font-family: inherit;
+}
+button {
+  background: var(--tt-surface);
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+button:hover:not(:disabled) { border-color: var(--tt-rose); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--tt-rose);
+  outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; }
+input, select, textarea { background: var(--tt-surface); }
+input::placeholder, textarea::placeholder { color: #A79B92; opacity: 1; }
+.primary,
+.tabs button.active,
+.timeline-filters button.active,
+.todo-category-filters button.active,
+.todo-view-modes button.active,
+.todo-filters button.active {
+  color: #fff;
+  background: var(--tt-primary);
+  border-color: var(--tt-primary);
+}
+.primary:hover:not(:disabled),
+.tabs button.active:hover:not(:disabled),
+.timeline-filters button.active:hover:not(:disabled),
+.todo-category-filters button.active:hover:not(:disabled) {
+  background: var(--tt-primary-hover);
+  border-color: var(--tt-primary-hover);
+}
+.delete { color: var(--tt-danger); }
+.panel, .day-timeline, .life-design-card, .todo-template-panel,
+.repeat-manage, .storage-health, .import-preview {
+  background: var(--tt-surface);
+  border-color: var(--tt-border);
+  box-shadow: var(--tt-shadow);
+}
+.datebar button, .tools-menu > summary, .undo-tools, .advanced-panel,
+.template-form, .todo-options, .entry-advanced {
+  background: var(--tt-surface);
+  border-color: var(--tt-border);
+}
+.tabs { background: #EFE6DE; }
+.tabs button { color: var(--tt-muted); }
+.tools-menu > summary:after,
+.advanced-panel > summary:after,
+.entry-advanced > summary:after,
+.todo-options > summary:after { color: var(--tt-primary); }
+.tools-content {
+  background: var(--tt-surface);
+  border-color: var(--tt-border);
+  box-shadow: 0 14px 36px rgba(89, 66, 53, .14);
+}
+.summary div, .goalbox, .period-goal, .date-copy-tools, .csv-range,
+.auto-backup-panel, .template-batch, .repeat-box, .bulk-edit-tools,
+.todo-template-panel, .todo-options, .todo-excluded-help {
+  background: var(--tt-surface-muted);
+  border-color: var(--tt-border);
+}
+.progress { background: #EAE2DB; }
+.progress div { background: var(--tt-primary); }
+.timeline-total { color: var(--tt-primary); background: var(--tt-primary-soft); }
+.timeline-filters button {
+  color: var(--tt-muted);
+  border-color: var(--tt-border);
+  background: var(--tt-surface);
+}
+.timeline-item {
+  color: var(--tt-text);
+  background: #EAF0E8;
+  border-left-color: var(--tt-sage-ink);
+}
+.timeline-item.planned {
+  background: #EAF0F5;
+  border-left-color: var(--tt-blue-ink);
+}
+.timeline-segment { background: var(--tt-sage-ink); }
+.timeline-segment.planned { background: var(--tt-blue-ink); }
+.timeline-empty { color: var(--tt-muted); background: var(--tt-surface-muted); }
+.timeline-add {
+  color: var(--tt-primary);
+  border-color: #E8CFCC;
+  background: var(--tt-primary-soft);
+}
+.timeline-quick-form { border-color: #E8CFCC; box-shadow: var(--tt-shadow); }
+.todo-category { color: var(--tt-primary); background: var(--tt-primary-soft); }
+.todo-subtask-node { border-left-color: var(--tt-border); }
+.todo-progress-bar { accent-color: var(--tt-primary); }
+.todo-template-card { border-top-color: var(--tt-border); }
+.calendar-day { color: var(--tt-text); border-color: var(--tt-border); }
+.calendar-day.recorded { background: #EAF0E8; }
+.calendar-day.achieved { color: #fff; background: var(--tt-primary); border-color: var(--tt-primary); }
+.calendar-day.achieved small { color: #fff; }
+.legend-dot.achieved { background: var(--tt-primary); }
+.legend-dot.recorded { background: var(--tt-sage); }
+.periodrow, .statrow { border-bottom-color: var(--tt-border); }
+.periodtotal { background: var(--tt-surface-soft); }
+.life-design-eyebrow, .life-design-date { color: var(--tt-muted); }
+#lifeByDesign {
+  color: var(--tt-text);
+  background: var(--tt-surface-soft);
+  border-color: var(--tt-border);
+}
+.life-design-date { background: var(--tt-surface); border-color: var(--tt-border); }
+.life-design-symbol { color: var(--tt-primary); background: var(--tt-primary-soft); }
+.life-design-card { border-color: var(--tt-border); }
+.life-design-field > span { color: var(--tt-text); }
+.life-design-field textarea, .life-design-field select {
+  color: var(--tt-text);
+  background: #FFFEFC;
+  border-color: var(--tt-border);
+}
+.life-design-field textarea:focus, .life-design-field select:focus {
+  outline-color: var(--tt-rose);
+}
+.life-design-field textarea::placeholder, .life-design-hint, .life-design-status { color: var(--tt-muted); }
+.health-ok { color: #526B55; }
+.health-warning, .import-error { color: var(--tt-danger); }
+footer { color: var(--tt-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

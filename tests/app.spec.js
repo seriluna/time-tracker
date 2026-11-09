@@ -777,8 +777,8 @@ test('24시간 타임라인은 분 단위 실제/계획 구간과 합계를 표�
   await expect(actual).toHaveCount(1);
   await expect(planned).toHaveCount(1);
   await expect(page.locator('.timeline-segment[data-kind="planned"][data-start-minute="600"][data-end-minute="615"]')).toHaveCount(1);
-  await expect(actual).toHaveCSS('background-color', 'rgb(80, 89, 168)');
-  await expect(planned).toHaveCSS('background-color', 'rgb(197, 139, 49)');
+  await expect(actual).toHaveCSS('background-color', 'rgb(82, 107, 85)');
+  await expect(planned).toHaveCSS('background-color', 'rgb(88, 108, 128)');
 });
 
 
@@ -2584,4 +2584,21 @@ test('손상된 시간 템플릿 저장 데이터는 편집·추가 시 덮어�
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#templateForm button[type="submit"]').click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-templates'))).toBe(corrupt);
+});
+
+
+test('Lifestyle Wellness 디자인 시스템이 기존 화면에 적용되고 데이터 구조는 변경하지 않음', async ({ page }) => {
+  await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
+  const original = JSON.stringify({ entries: [], todos: [] });
+  await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), original);
+  const styles = await page.evaluate(() => ({
+    background: getComputedStyle(document.body).backgroundColor,
+    primary: getComputedStyle(document.querySelector('#saveEntry')).backgroundColor,
+    panel: getComputedStyle(document.querySelector('#recordPanel')).backgroundColor,
+    storage: localStorage.getItem('time-tracker-v1')
+  }));
+  expect(styles.background).toBe('rgb(248, 245, 240)');
+  expect(styles.primary).toBe('rgb(156, 101, 107)');
+  expect(styles.panel).toBe('rgb(255, 254, 252)');
+  expect(styles.storage).toBe(original);
 });
