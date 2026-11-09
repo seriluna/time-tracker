@@ -2505,3 +2505,67 @@ test('Life by Design 원본이 손상된 경우 시간 기록 저장이 기존 �
   expect(state.backup.dailyDesign).toEqual(preserved);
   expect(state.dailyRaw).toBe(corruptRaw);
 });
+
+
+test('Todo 기존 항목 편집에서 날짜·내용·분류·중요도·예상 시간을 변경하고 새로고침 후 유지함', async ({ page }) => {
+  const initialDate = '2026-11-08';
+  const updatedDate = '2026-11-07';
+  await page.locator('#day').fill(initialDate);
+  await page.locator('[data-tab="todo"]').click();
+  await page.locator('#todoText').fill('날짜 수정 전');
+  await page.locator('#todoForm button[type="submit"]').click();
+  const todoId = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos[0].id);
+  await page.locator('[data-todo-edit="' + todoId + '"]').click();
+  await expect(page.locator('#todoDateField')).toBeVisible();
+  await page.locator('#todoText').fill('날짜 수정 완료');
+  await page.locator('#todoDate').fill(updatedDate);
+  await page.locator('#todoCategory').selectOption('personal');
+  await page.locator('#todoImportance').selectOption('high');
+  await page.locator('#todoEstimate').fill('75');
+  await page.locator('#todoForm button[type="submit"]').click();
+  await page.reload();
+  const saved = await page.evaluate(id => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.id === id), todoId);
+  expect(saved).toMatchObject({ date: updatedDate, text: '날짜 수정 완료', category: 'personal', importance: 'high', estimatedMinutes: 75 });
+});
+
+test('시간 기록 템플릿을 수정하고 취소할 수 있으며 변경 사항은 새로고침 후 유지됨', async ({ page }) => {
+  await page.locator('.advanced-panel summary').click();
+  await page.locator('#templateName').fill('기존 템플릿');
+  await page.locator('#templateActivity').fill('기존 활동');
+  await page.locator('#templateStart').fill('07:00');
+  await page.locator('#templateEnd').fill('08:00');
+  await page.locator('#templateForm button[type="submit"]').click();
+  const id = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-templates'))[0].id);
+  await page.locator('[data-edit-template="' + id + '"]').click();
+  await page.locator('#templateName').fill('수정 템플릿');
+  await page.locator('#templateActivity').fill('수정 활동');
+  await page.locator('#templateStart').fill('08:00');
+  await page.locator('#templateEnd').fill('09:30');
+  await page.locator('#templateForm button[type="submit"]').click();
+  await page.reload();
+  const saved = await page.evaluate(id => JSON.parse(localStorage.getItem('time-tracker-templates')).find(x => x.id === id), id);
+  expect(saved).toMatchObject({ name: '수정 템플릿', activity: '수정 활동', start: '08:00', end: '09:30' });
+});
+
+test('Todo 템플릿의 이름·내용·속성을 수정하고 하위 작업 구조를 보존함', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('time-tracker-todo-templates', JSON.stringify([{
+      id: 'editable-template', name: '원본 템플릿', text: '원본 작업', category: 'work', importance: 'medium',
+      estimatedMinutes: 30, subtasks: [{ text: '하위 작업', subtasks: [{ text: '중첩 작업' }] }]
+    }]));
+  });
+  await page.reload();
+  page.once('dialog', dialog => dialog.accept('수정 템플릿 이름'));
+  page.once('dialog', dialog => dialog.accept('수정된 작업'));
+  page.once('dialog', dialog => dialog.accept('personal'));
+  page.once('dialog', dialog => dialog.accept('high'));
+  page.once('dialog', dialog => dialog.accept('90'));
+  page.once('dialog', dialog => dialog.accept('수정된 하위 작업'));
+  page.once('dialog', dialog => dialog.accept('수정된 중첩 작업'));
+  await page.locator('[data-todo-template-edit="editable-template"]').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates'))[0]);
+  expect(saved).toMatchObject({
+    name: '수정 템플릿 이름', text: '수정된 작업', category: 'personal', importance: 'high', estimatedMinutes: 90,
+    subtasks: [{ text: '수정된 하위 작업', subtasks: [{ text: '수정된 중첩 작업' }] }]
+  });
+});
