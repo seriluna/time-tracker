@@ -2585,3 +2585,19 @@ test('손상된 시간 템플릿 저장 데이터는 편집·추가 시 덮어�
   await page.locator('#templateForm button[type="submit"]').click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-templates'))).toBe(corrupt);
 });
+
+
+test('Lifestyle Wellness 디자인 시스템이 기존 화면에 적용되고 데이터 구조는 변경하지 않음', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
+  const styles = await page.evaluate(() => ({
+    background: getComputedStyle(document.body).backgroundColor,
+    primary: getComputedStyle(document.querySelector('#saveEntry')).backgroundColor,
+    panel: getComputedStyle(document.querySelector('#recordPanel')).backgroundColor,
+    storage: localStorage.getItem('time-tracker-v1')
+  }));
+  expect(styles.background).toBe('rgb(248, 245, 240)');
+  expect(styles.primary).toBe('rgb(156, 101, 107)');
+  expect(styles.panel).toBe('rgb(255, 254, 252)');
+  expect(styles.storage).toBe(JSON.stringify({ entries: [], todos: [] }));
+});
