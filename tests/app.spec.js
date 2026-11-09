@@ -2526,6 +2526,7 @@ test('Todo 기존 항목 편집에서 날짜·내용·분류·중요도·예상 
   await page.reload();
   const saved = await page.evaluate(id => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.id === id), todoId);
   expect(saved).toMatchObject({ date: updatedDate, text: '날짜 수정 완료', category: 'personal', importance: 'high', estimatedMinutes: 75 });
+  await page.locator('#day').fill(initialDate);
   await page.locator('#todoText').fill('새로 추가한 할 일');
   await page.locator('#todoForm button[type="submit"]').click();
   const nextTodo = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.text === '새로 추가한 할 일'));
