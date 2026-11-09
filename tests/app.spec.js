@@ -2527,6 +2527,7 @@ test('Todo 기존 항목 편집에서 날짜·내용·분류·중요도·예상 
   const saved = await page.evaluate(id => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.id === id), todoId);
   expect(saved).toMatchObject({ date: updatedDate, text: '날짜 수정 완료', category: 'personal', importance: 'high', estimatedMinutes: 75 });
   await page.locator('#day').fill(initialDate);
+  await page.locator('[data-tab="todo"]').click();
   await page.locator('#todoText').fill('새로 추가한 할 일');
   await page.locator('#todoForm button[type="submit"]').click();
   const nextTodo = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-v1')).todos.find(x => x.text === '새로 추가한 할 일'));
@@ -2561,13 +2562,8 @@ test('Todo 템플릿의 이름·내용·속성을 수정하고 하위 작업 구
   });
   await page.reload();
   await page.locator('[data-tab="todo"]').click();
-  page.once('dialog', dialog => dialog.accept('수정 템플릿 이름'));
-  page.once('dialog', dialog => dialog.accept('수정된 작업'));
-  page.once('dialog', dialog => dialog.accept('personal'));
-  page.once('dialog', dialog => dialog.accept('high'));
-  page.once('dialog', dialog => dialog.accept('90'));
-  page.once('dialog', dialog => dialog.accept('수정된 하위 작업'));
-  page.once('dialog', dialog => dialog.accept('수정된 중첩 작업'));
+  const answers = ['수정 템플릿 이름', '수정된 작업', 'personal', 'high', '90', '수정된 하위 작업', '수정된 중첩 작업'];
+  page.on('dialog', dialog => dialog.accept(answers.shift()));
   await page.locator('[data-todo-template-edit="editable-template"]').click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-todo-templates'))[0]);
   expect(saved).toMatchObject({
