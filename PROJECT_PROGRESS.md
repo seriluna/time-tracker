@@ -200,3 +200,16 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 - No localStorage key, saved record, Todo data, time value, or data schema was changed.
 - Android/Samsung native picker presentation still requires user confirmation on a physical device; automated browser tests do not prove OS-level picker rendering.
 - PR #54 supersedes stale PR #52. Do not merge PR #52.
+
+
+## Life by Design — Morning Plan + Evening Reflection (2026-11-09)
+
+- Status: IN_PROGRESS — implemented on isolated branch `feat/life-by-design-morning-evening`; not merged and not deployed.
+- Scope: place Morning Plan and Evening Reflection at the top of the existing Record tab; autosave each field by selected date.
+- New independent storage key: `time-tracker-daily-design-v1`. Existing `time-tracker-v1` shape remains `{ entries: [], todos: [] }` and is not migrated or rewritten by this feature.
+- New files: `life-by-design.js`, `life-by-design.css`.
+- Backup compatibility: JSON export and automatic backup include optional `dailyDesign`; legacy backups without this field preserve current Life by Design data on restore. New backups validate the optional field before restore.
+- PWA cache: bumped to `time-tracker-v42` and includes both new assets.
+- Tests added: autosave/reload, date separation, backup/export inclusion, legacy backup preservation, and 320px overflow.
+- Guardrails: do not modify `seriluna/life-os-goal`; do not merge before all checks pass and user approval; do not deploy without separate explicit user approval.
+- Current branch head is recorded in GitHub; CI verification is still pending.
