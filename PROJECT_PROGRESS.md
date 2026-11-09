@@ -204,12 +204,14 @@ Status labels: TODO / IN_PROGRESS / BLOCKED / DONE. Update only when verified.
 
 ## Life by Design — Morning Plan + Evening Reflection (2026-11-09)
 
-- Status: IN_PROGRESS — implemented on isolated branch `feat/life-by-design-morning-evening`; not merged and not deployed.
+- Status: CI_VERIFIED — implemented on isolated branch `feat/life-by-design-morning-evening`; PR #56 remains Draft, unmerged, and undeployed.
 - Scope: place Morning Plan and Evening Reflection at the top of the existing Record tab; autosave each field by selected date.
 - New independent storage key: `time-tracker-daily-design-v1`. Existing `time-tracker-v1` shape remains `{ entries: [], todos: [] }` and is not migrated or rewritten by this feature.
 - New files: `life-by-design.js`, `life-by-design.css`.
 - Backup compatibility: JSON export and automatic backup include optional `dailyDesign`; legacy backups without this field preserve current Life by Design data on restore. New backups validate the optional field before restore.
 - PWA cache: bumped to `time-tracker-v42` and includes both new assets.
-- Tests added: autosave/reload, date separation, backup/export inclusion, legacy backup preservation, and 320px overflow.
+- Tests added: autosave/reload, date separation, backup/export inclusion, legacy backup preservation, corrupted-source backup preservation, invalid calendar date rejection, and 320px overflow.
+- CI: [Browser tests run 42576395342](https://github.com/seriluna/time-tracker/actions/runs/42576395342) passed; JavaScript syntax checks and all 97 Playwright tests passed (2026-11-09).
+- Final review: identified and fixed invalid calendar-date normalization and protection of existing dailyDesign backup data when the separate source is corrupted.
 - Guardrails: do not modify `seriluna/life-os-goal`; do not merge before all checks pass and user approval; do not deploy without separate explicit user approval.
-- Current branch head is recorded in GitHub; CI verification is still pending.
+- Current branch head: `074fc3c06bf9ff6cbd62846244f7791769470fe3`. Await explicit user approval before merging; deployment requires separate explicit approval.
