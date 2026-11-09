@@ -2560,6 +2560,7 @@ test('Todo 템플릿의 이름·내용·속성을 수정하고 하위 작업 구
     }]));
   });
   await page.reload();
+  await page.locator('[data-tab="todo"]').click();
   page.once('dialog', dialog => dialog.accept('수정 템플릿 이름'));
   page.once('dialog', dialog => dialog.accept('수정된 작업'));
   page.once('dialog', dialog => dialog.accept('personal'));
