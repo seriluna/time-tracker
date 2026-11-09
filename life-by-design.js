@@ -15,6 +15,7 @@ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth
 const date=()=> $('day')?.value||today();
 const snapshot=()=>JSON.parse(JSON.stringify(data));
 window.getDailyDesignData=snapshot;
+window.isDailyDesignCorrupt=()=>corrupt;
 window.validateDailyDesignData=validData;
 function refreshBackup(){
  try{
