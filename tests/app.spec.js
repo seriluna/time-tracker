@@ -172,6 +172,35 @@ test('직전 저장 상태 복구는 최신 자동 백업이 아닌 이전 데�
   expect(saved.entries[0].name).toBe('먼저 저장한 기록');
 });
 
+test('타임라인이 균형 잡힌 터치 영역과 명확한 기록 계층을 사용함', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#name').fill('시각 계층 확인 기록');
+  await page.locator('#start').fill('09:00');
+  await page.locator('#end').fill('09:30');
+  await page.locator('#entryForm button[type="submit"]').click();
+  const row = page.locator('.timeline-hour').filter({ has: page.locator('[data-timeline-entry]') }).first();
+  const metrics = await row.evaluate(element => {
+    const add = element.querySelector('.timeline-add');
+    const item = element.querySelector('.timeline-item');
+    const addRect = add.getBoundingClientRect();
+    const addStyle = getComputedStyle(add);
+    const itemStyle = getComputedStyle(item);
+    const rowStyle = getComputedStyle(element);
+    return {
+      addWidth: Math.round(addRect.width),
+      addHeight: Math.round(addRect.height),
+      itemRadius: itemStyle.borderRadius,
+      rowMinHeight: rowStyle.minHeight,
+      addBackground: addStyle.backgroundColor,
+    };
+  });
+  expect(metrics.addWidth).toBeGreaterThanOrEqual(32);
+  expect(metrics.addHeight).toBeGreaterThanOrEqual(32);
+  expect(metrics.itemRadius).toBe('9px');
+  expect(metrics.rowMinHeight).toBe('58px');
+  expect(metrics.addBackground).toBe('rgb(243, 229, 227)');
+});
+
 test('오늘 24시간이 세로 타임라인으로 표시됨', async ({ page }) => {
   await expect(page.locator('#dayTimeline')).toBeVisible();
   await expect(page.locator('.timeline-hour')).toHaveCount(24);
