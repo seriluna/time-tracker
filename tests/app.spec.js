@@ -2414,3 +2414,55 @@ test('Life by Design은 320px 모바일 화면에서 가로 넘침이 없음', a
   expect(sizes.document).toBeLessThanOrEqual(sizes.viewport);
   await expect(page.locator('#lifeByDesign')).toBeVisible();
 });
+
+
+test('Life by Design 자동 저장은 기존 time-tracker-v1 시간 기록과 Todo를 변경하지 않음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  const original = {
+    entries: [{ id: 'keep-entry', date, name: '기존 기록', start: '08:00', end: '09:00', kind: 'actual' }],
+    todos: [{ id: 'keep-todo', date, text: '기존 할 일', done: false }]
+  };
+  await page.evaluate(value => localStorage.setItem('time-tracker-v1', JSON.stringify(value)), original);
+  await page.reload();
+  const before = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  await page.locator('#ld-morning-priority').fill('새로운 하루의 핵심');
+  const after = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  expect(after).toBe(before);
+  expect(JSON.parse(after)).toEqual(original);
+});
+
+test('새 형식의 JSON 백업 복원은 Life by Design 데이터도 검증 후 복원함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('#ld-morning-identity').fill('복원 전 데이터');
+  await page.locator('.tools-menu summary').click();
+  const backup = {
+    entries: [],
+    todos: [],
+    dailyDesign: { [date]: { morning: { identity: '백업에서 복원된 정체성' }, evening: { satisfaction: 5 } } }
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'life-design-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await expect(page.locator('#ld-morning-identity')).toHaveValue('백업에서 복원된 정체성');
+  await expect(page.locator('#ld-evening-satisfaction')).toHaveValue('5');
+});
+
+test('잘못된 dailyDesign 백업은 거부하고 기존 회고와 시간 기록을 보존함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('#ld-morning-identity').fill('보존할 기존 회고');
+  const before = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-life-design-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ entries: [], todos: [], dailyDesign: { [date]: { morning: { unexpected: 'invalid' } } } }), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나');
+  expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(before);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[date].morning.identity)).toBe('보존할 기존 회고');
+});
