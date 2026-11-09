@@ -2466,3 +2466,23 @@ test('잘못된 dailyDesign 백업은 거부하고 기존 회고와 시간 기�
   expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(before);
   expect(await page.evaluate(value => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[value].morning.identity, date)).toBe('보존할 기존 회고');
 });
+
+
+test('잘못된 달력 날짜가 포함된 dailyDesign 백업은 거부하고 기존 데이터를 보존함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('#ld-morning-identity').fill('날짜 검증 전 기존 데이터');
+  const backup = {
+    entries: [],
+    todos: [],
+    dailyDesign: { '2026-02-31': { morning: { identity: '존재하지 않는 날짜' } } }
+  };
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'invalid-calendar-date-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나');
+  const stored = await page.evaluate(value => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[value].morning.identity, date);
+  expect(stored).toBe('날짜 검증 전 기존 데이터');
+});
