@@ -2343,3 +2343,74 @@ test('시간 입력 필드는 한국어 기기에서도 24시간 표시 로캘�
   await expect(page.locator('#start')).toHaveValue('05:00');
   await expect(page.locator('#end')).toHaveValue('17:25');
 });
+
+
+test('Life by Design 아침 계획과 저녁 회고를 입력 즉시 날짜별 자동 저장하고 새로고침 후 복원함', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await expect(page.locator('#lifeByDesign')).toBeVisible();
+  await page.locator('#ld-morning-identity').fill('차분하고 집중력 있는 사람');
+  await page.locator('#ld-morning-priority').fill('핵심 프로젝트 완성');
+  await page.locator('#ld-evening-bestChoice').fill('중요한 일부터 실행했다');
+  await page.locator('#ld-evening-satisfaction').selectOption('4');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1')));
+  expect(stored[date].morning.identity).toBe('차분하고 집중력 있는 사람');
+  expect(stored[date].morning.priority).toBe('핵심 프로젝트 완성');
+  expect(stored[date].evening.bestChoice).toBe('중요한 일부터 실행했다');
+  expect(stored[date].evening.satisfaction).toBe(4);
+  await page.reload();
+  await expect(page.locator('#ld-morning-identity')).toHaveValue('차분하고 집중력 있는 사람');
+  await expect(page.locator('#ld-evening-bestChoice')).toHaveValue('중요한 일부터 실행했다');
+  await expect(page.locator('#ld-evening-satisfaction')).toHaveValue('4');
+});
+
+test('Life by Design 날짜를 바꾸면 날짜별 입력이 분리되고 기존 날짜 기록을 다시 불러옴', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('#ld-morning-joy').fill('오늘의 작은 즐거움');
+  const nextDate = await page.evaluate(value => { const d=new Date(value+'T12:00:00');d.setDate(d.getDate()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }, date);
+  await page.locator('#day').fill(nextDate);
+  await expect(page.locator('#ld-morning-joy')).toHaveValue('');
+  await page.locator('#ld-morning-joy').fill('다음 날의 즐거움');
+  await page.locator('#day').fill(date);
+  await expect(page.locator('#ld-morning-joy')).toHaveValue('오늘의 작은 즐거움');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1')));
+  expect(stored[date].morning.joy).toBe('오늘의 작은 즐거움');
+  expect(stored[nextDate].morning.joy).toBe('다음 날의 즐거움');
+});
+
+test('Life by Design 자동 백업 및 JSON 내보내기에 dailyDesign을 포함함', async ({ page }) => {
+  await page.locator('#ld-evening-learning').fill('오늘 배운 점');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-auto-backup-v1') || '{}').dailyDesign)).not.toBeUndefined();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#export').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  let raw = '';
+  for await (const chunk of stream) raw += chunk.toString('utf8');
+  expect(JSON.parse(raw).dailyDesign[await page.locator('#day').inputValue()].evening.learning).toBe('오늘 배운 점');
+});
+
+test('기존 형식의 JSON 백업 복원은 아침 계획과 저녁 회고를 삭제하지 않음', async ({ page }) => {
+  const date = await page.locator('#day').inputValue();
+  await page.locator('#ld-morning-identity').fill('기존 회고 보존 확인');
+  await page.locator('.tools-menu summary').click();
+  await page.locator('#importFile').setInputFiles({
+    name: 'legacy-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ entries: [], todos: [] }), 'utf8'),
+  });
+  await expect(page.locator('#importPreview')).toContainText('백업 파일 검증 완료');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#confirmImport').click();
+  await expect(page.locator('#ld-morning-identity')).toHaveValue('기존 회고 보존 확인');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1')));
+  expect(stored[date].morning.identity).toBe('기존 회고 보존 확인');
+});
+
+test('Life by Design은 320px 모바일 화면에서 가로 넘침이 없음', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.reload();
+  const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, document: document.documentElement.scrollWidth }));
+  expect(sizes.document).toBeLessThanOrEqual(sizes.viewport);
+  await expect(page.locator('#lifeByDesign')).toBeVisible();
+});
