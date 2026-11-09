@@ -6,7 +6,7 @@ const fields={
  evening:[['bestChoice','오늘 가장 잘한 선택은?','스스로 칭찬하고 싶은 행동'],['learning','오늘 새롭게 배운 것은?','오늘의 배움과 깨달음'],['improvement','내일 바꾸고 싶은 행동은?','내일 실천할 작은 변화']]
 };
 const validDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(new Date(v+'T12:00:00').getTime());
-const validRecord=r=>r&&typeof r==='object'&&!Array.isArray(r)&&['morning','evening'].every(group=>r[group]===undefined||(r[group]&&typeof r[group]==='object'&&!Array.isArray(r[group])&&Object.entries(r[group]).every(([k,v])=>[...fields.morning,...fields.evening].some(f=>f[0]===k)&&typeof v==='string')))&& (r.evening?.satisfaction===undefined||r.evening.satisfaction===null||[1,2,3,4,5].includes(r.evening.satisfaction));
+const validRecord=r=>r&&typeof r==='object'&&!Array.isArray(r)&&['morning','evening'].every(group=>r[group]===undefined||(r[group]&&typeof r[group]==='object'&&!Array.isArray(r[group])&&Object.entries(r[group]).every(([k,v])=>group==='morning'?fields.morning.some(f=>f[0]===k)&&typeof v==='string':(k==='satisfaction'?(v===null||[1,2,3,4,5].includes(v)):fields.evening.some(f=>f[0]===k)&&typeof v==='string'))));
 const validData=d=>d&&typeof d==='object'&&!Array.isArray(d)&&Object.entries(d).every(([date,record])=>validDate(date)&&validRecord(record));
 let data={},corrupt=false,rawOriginal=null;
 try{const raw=localStorage.getItem(KEY);if(raw!==null){const parsed=JSON.parse(raw);if(!validData(parsed))throw Error('invalid');data=parsed}}catch{corrupt=true;rawOriginal=localStorage.getItem(KEY)}
