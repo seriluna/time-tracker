@@ -114,3 +114,17 @@ GitHub Actions는 `main` push, Pull Request, 수동 실행에서 문법 검사�
 - [ ] 온라인 복귀 후 최신 UI가 업데이트되는지 확인함
 
 시작 속도 개선은 서비스 워커 구현 변경만으로 확정하지 않습니다. 동일 기기·비슷한 네트워크 조건에서 측정한 결과가 있을 때만 체감 성능 개선으로 보고하세요.
+
+
+## 8. Life by Design 회귀 테스트
+
+- [ ] 아침 계획과 저녁 회고 입력이 입력 즉시 날짜별 저장되고 새로고침 후 복원됨
+- [ ] 날짜를 바꾸면 각 날짜의 계획·회고가 분리되어 표시됨
+- [ ] 기존 `time-tracker-v1` 시간 기록과 Todo가 Life by Design 자동 저장으로 변경되지 않음
+- [ ] 자동 백업 및 JSON 내보내기에 `dailyDesign`이 포함됨
+- [ ] 새 형식의 백업 복원 시 `dailyDesign`도 검증 후 복원됨
+- [ ] `dailyDesign`이 없는 구버전 백업 복원은 기존 Life by Design 데이터를 보존함
+- [ ] 잘못된 `dailyDesign` 백업은 거부되고 기존 데이터가 보존됨
+- [ ] 320px 모바일 viewport에서 가로 넘침이 없음
+
+Life by Design은 `time-tracker-daily-design-v1` 별도 키를 사용합니다. 기존 `time-tracker-v1`은 `{ entries: [], todos: [] }` 형식을 유지합니다.
