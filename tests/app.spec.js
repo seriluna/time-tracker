@@ -777,8 +777,8 @@ test('24시간 타임라인은 분 단위 실제/계획 구간과 합계를 표�
   await expect(actual).toHaveCount(1);
   await expect(planned).toHaveCount(1);
   await expect(page.locator('.timeline-segment[data-kind="planned"][data-start-minute="600"][data-end-minute="615"]')).toHaveCount(1);
-  await expect(actual).toHaveCSS('background-color', 'rgb(80, 89, 168)');
-  await expect(planned).toHaveCSS('background-color', 'rgb(197, 139, 49)');
+  await expect(actual).toHaveCSS('background-color', 'rgb(82, 107, 85)');
+  await expect(planned).toHaveCSS('background-color', 'rgb(88, 108, 128)');
 });
 
 
