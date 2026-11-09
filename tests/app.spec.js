@@ -2486,3 +2486,22 @@ test('잘못된 달력 날짜가 포함된 dailyDesign 백업은 거부하고 �
   const stored = await page.evaluate(value => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[value].morning.identity, date);
   expect(stored).toBe('날짜 검증 전 기존 데이터');
 });
+
+test('Life by Design 원본이 손상된 경우 시간 기록 저장이 기존 자동 백업의 회고 데이터를 덮어쓰지 않음', async ({ page }) => {
+  const preserved = { '2026-11-09': { morning: { priority: '복구 가능한 기존 회고' }, evening: {} } };
+  const corruptRaw = '{"2026-11-09":';
+  await page.evaluate(({ backup, corrupt }) => {
+    localStorage.setItem('time-tracker-auto-backup-v1', JSON.stringify({ entries: [], todos: [], dailyDesign: backup }));
+    localStorage.setItem('time-tracker-daily-design-v1', corrupt);
+  }, { backup: preserved, corrupt: corruptRaw });
+  await page.reload();
+  await page.locator('#name').fill('손상 데이터 상태에서 저장');
+  await page.locator('#entryForm button[type="submit"]').click();
+
+  const state = await page.evaluate(() => ({
+    backup: JSON.parse(localStorage.getItem('time-tracker-auto-backup-v1')),
+    dailyRaw: localStorage.getItem('time-tracker-daily-design-v1'),
+  }));
+  expect(state.backup.dailyDesign).toEqual(preserved);
+  expect(state.dailyRaw).toBe(corruptRaw);
+});
