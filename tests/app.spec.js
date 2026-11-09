@@ -2574,3 +2574,17 @@ test('Todo 템플릿의 이름·내용·속성을 수정하고 하위 작업 구
     subtasks: [{ text: '수정된 하위 작업', subtasks: [{ text: '수정된 중첩 작업' }] }]
   });
 });
+
+
+test('손상된 시간 템플릿 저장 데이터는 편집·추가 시 덮어쓰지 않고 원본을 보존함', async ({ page }) => {
+  const corrupt = '{broken time templates';
+  await page.evaluate(raw => localStorage.setItem('time-tracker-templates', raw), corrupt);
+  await page.reload();
+  await page.locator('.advanced-panel summary').click();
+  await expect(page.locator('#templates')).toContainText('읽기 전용으로 보호');
+  await page.locator('#templateName').fill('새 템플릿');
+  await page.locator('#templateActivity').fill('새 활동');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#templateForm button[type="submit"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('time-tracker-templates'))).toBe(corrupt);
+});
