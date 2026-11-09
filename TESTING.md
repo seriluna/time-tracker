@@ -128,3 +128,12 @@ GitHub Actions는 `main` push, Pull Request, 수동 실행에서 문법 검사�
 - [ ] 320px 모바일 viewport에서 가로 넘침이 없음
 
 Life by Design은 `time-tracker-daily-design-v1` 별도 키를 사용합니다. 기존 `time-tracker-v1`은 `{ entries: [], todos: [] }` 형식을 유지합니다.
+
+
+## 9. Life by Design CI 결과 (2026-11-09)
+
+- GitHub Actions Browser tests: [run 42576395342](https://github.com/seriluna/time-tracker/actions/runs/42576395342) — 성공.
+- JavaScript 문법 검사: `app.js`, `life-by-design.js`, `tests/app.spec.js` 통과.
+- Playwright: 97 passed (29.2s).
+- 추가 회귀 항목: `dailyDesign` 원본 손상 시 자동 백업의 기존 회고 보존, 불가능한 달력 날짜(예: `2026-02-31`)가 포함된 백업 거부 및 기존 데이터 보존.
+- 이 CI 결과는 GitHub Actions 브라우저 환경의 검증이며, 실제 Android 기기 및 배포 사이트 확인을 의미하지 않습니다.
