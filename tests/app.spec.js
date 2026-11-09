@@ -173,6 +173,7 @@ test('직전 저장 상태 복구는 최신 자동 백업이 아닌 이전 데�
 });
 
 test('타임라인이 균형 잡힌 터치 영역과 명확한 기록 계층을 사용함', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   const addButton = page.locator('[data-add-hour="09"]');
   await expect(addButton).toBeVisible();
   const metrics = await page.locator('.timeline-hour').first().evaluate(row => {
