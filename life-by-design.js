@@ -5,7 +5,7 @@ const fields={
  morning:[['identity','오늘 나는 어떤 사람이 되고 싶은가?','예: 평온하고 집중력 있는 실행가'],['priority','오늘 반드시 완성할 가장 중요한 결과물은?','오늘의 핵심 결과물 하나'],['health','건강을 위해 오늘 할 행동은?','예: 근력 운동 40분'],['relationship','관계와 사랑을 위해 할 행동은?','예: 가족과 휴대폰 없이 식사하기'],['joy','오늘 꼭 즐기고 싶은 순간은?','예: 좋아하는 카페에서 책 읽기']],
  evening:[['bestChoice','오늘 가장 잘한 선택은?','스스로 칭찬하고 싶은 행동'],['learning','오늘 새롭게 배운 것은?','오늘의 배움과 깨달음'],['improvement','내일 바꾸고 싶은 행동은?','내일 실천할 작은 변화']]
 };
-const validDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(new Date(v+'T12:00:00').getTime());
+const validDate=v=>{if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T12:00:00');return Number.isFinite(d.getTime())&&d.getFullYear()===Number(v.slice(0,4))&&d.getMonth()+1===Number(v.slice(5,7))&&d.getDate()===Number(v.slice(8,10))};
 const validRecord=r=>r&&typeof r==='object'&&!Array.isArray(r)&&['morning','evening'].every(group=>r[group]===undefined||(r[group]&&typeof r[group]==='object'&&!Array.isArray(r[group])&&Object.entries(r[group]).every(([k,v])=>group==='morning'?fields.morning.some(f=>f[0]===k)&&typeof v==='string':(k==='satisfaction'?(v===null||[1,2,3,4,5].includes(v)):fields.evening.some(f=>f[0]===k)&&typeof v==='string'))));
 const validData=d=>d&&typeof d==='object'&&!Array.isArray(d)&&Object.entries(d).every(([date,record])=>validDate(date)&&validRecord(record));
 let data={},corrupt=false,rawOriginal=null;
