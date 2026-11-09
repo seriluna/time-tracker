@@ -2351,7 +2351,7 @@ test('Life by Design 아침 계획과 저녁 회고를 입력 즉시 날짜별 �
   await page.locator('#ld-morning-identity').fill('차분하고 집중력 있는 사람');
   await page.locator('#ld-morning-priority').fill('핵심 프로젝트 완성');
   await page.locator('#ld-evening-bestChoice').fill('중요한 일부터 실행했다');
-  await page.locator('#ld-evening-satisfaction').selectOption('4');
+  await page.locator('#ld-satisfaction').selectOption('4');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1')));
   expect(stored[date].morning.identity).toBe('차분하고 집중력 있는 사람');
   expect(stored[date].morning.priority).toBe('핵심 프로젝트 완성');
@@ -2360,7 +2360,7 @@ test('Life by Design 아침 계획과 저녁 회고를 입력 즉시 날짜별 �
   await page.reload();
   await expect(page.locator('#ld-morning-identity')).toHaveValue('차분하고 집중력 있는 사람');
   await expect(page.locator('#ld-evening-bestChoice')).toHaveValue('중요한 일부터 실행했다');
-  await expect(page.locator('#ld-evening-satisfaction')).toHaveValue('4');
+  await expect(page.locator('#ld-satisfaction')).toHaveValue('4');
 });
 
 test('Life by Design 날짜를 바꾸면 날짜별 입력이 분리되고 기존 날짜 기록을 다시 불러옴', async ({ page }) => {
@@ -2449,7 +2449,7 @@ test('새 형식의 JSON 백업 복원은 Life by Design 데이터도 검증 후
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#confirmImport').click();
   await expect(page.locator('#ld-morning-identity')).toHaveValue('백업에서 복원된 정체성');
-  await expect(page.locator('#ld-evening-satisfaction')).toHaveValue('5');
+  await expect(page.locator('#ld-satisfaction')).toHaveValue('5');
 });
 
 test('잘못된 dailyDesign 백업은 거부하고 기존 회고와 시간 기록을 보존함', async ({ page }) => {
@@ -2464,5 +2464,5 @@ test('잘못된 dailyDesign 백업은 거부하고 기존 회고와 시간 기�
   });
   await expect(page.locator('#importPreview')).toContainText('백업 파일 형식이 올바르지 않거나');
   expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(before);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[date].morning.identity)).toBe('보존할 기존 회고');
+  expect(await page.evaluate(value => JSON.parse(localStorage.getItem('time-tracker-daily-design-v1'))[value].morning.identity, date)).toBe('보존할 기존 회고');
 });
