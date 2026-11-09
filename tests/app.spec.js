@@ -2666,3 +2666,17 @@ test('Lifestyle Wellness 디자인 시스템이 기존 화면에 적용되고 �
   expect(styles.panel).toBe('rgb(255, 254, 252)');
   expect(styles.storage).toBe(original);
 });
+
+
+test('기록 화면은 24시간 타임라인을 먼저 보여주고 Life by Design을 그 다음에 배치함', async ({ page }) => {
+  const order = await page.evaluate(() => {
+    const panel = document.querySelector('#recordPanel');
+    const timeline = panel.querySelector('#dayTimeline');
+    const life = panel.querySelector('#lifeByDesign');
+    return { timeline: [...panel.children].indexOf(timeline), life: [...panel.children].indexOf(life) };
+  });
+  expect(order.timeline).toBeGreaterThanOrEqual(0);
+  expect(order.life).toBeGreaterThan(order.timeline);
+  await expect(page.locator('#dayTimeline')).toBeVisible();
+  await expect(page.locator('#lifeByDesign')).toBeAttached();
+});
