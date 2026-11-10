@@ -141,36 +141,49 @@ test('할 일 추가, 완료 체크 및 새로고침 유지', async ({ page }) =
   await expect(page.locator('#todos .todo')).toHaveClass(/done/);
 });
 
-test('Todo 긴 제목과 작업 버튼이 작은 모바일 화면에서도 세로로 찌그러지지 않음', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 800 });
+test('Todo 제목은 320px·360px·390px에서 가로 방향과 충분한 너비를 유지함', async ({ page }) => {
   await page.locator('[data-tab="todo"]').click();
-  const title = '오늘 반드시 마무리해야 하는 중요한 프로젝트 기획서 검토 및 최종 수정 작업';
-  await page.locator('#todoText').fill(title);
-  await page.locator('#todoForm button[type="submit"]').click();
+  const widths = [320, 360, 390];
+  let lastTitle = '';
 
-  const todo = page.locator('#todos .todo').filter({ hasText: title });
-  await expect(todo).toBeVisible();
-  await expect(todo.locator('.todo-actions button')).toHaveCount(5);
-  const metrics = await todo.evaluate(element => {
-    const content = element.querySelector('.todo-content').getBoundingClientRect();
-    const actions = element.querySelector('.todo-actions').getBoundingClientRect();
-    const checkbox = element.querySelector(':scope > input[type="checkbox"]').getBoundingClientRect();
-    return {
-      contentWidth: Math.round(content.width),
-      actionsWidth: Math.round(actions.width),
-      checkboxWidth: Math.round(checkbox.width),
-      cardWidth: Math.round(element.getBoundingClientRect().width),
-      documentWidth: document.documentElement.scrollWidth,
-      viewportWidth: document.documentElement.clientWidth,
-      columns: getComputedStyle(element).gridTemplateColumns,
-    };
-  });
-  expect(metrics.contentWidth).toBeGreaterThan(180);
-  expect(metrics.actionsWidth).toBeGreaterThan(180);
-  expect(metrics.checkboxWidth).toBeGreaterThanOrEqual(18);
-  expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
-  await todo.locator('[data-todo-edit]').click();
-  await expect(page.locator('#todoText')).toHaveValue(title);
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 800 });
+    const title = '오늘 반드시 마무리해야 하는 중요한 프로젝트 기획서 검토 및 최종 수정 작업 ' + width + 'px';
+    lastTitle = title;
+    await page.locator('#todoText').fill(title);
+    await page.locator('#todoForm button[type="submit"]').click();
+
+    const todo = page.locator('#todos .todo').filter({ hasText: title });
+    await expect(todo).toBeVisible();
+    await expect(todo.locator('.todo-actions button')).toHaveCount(5);
+    const metrics = await todo.evaluate(element => {
+      const contentElement = element.querySelector('.todo-content');
+      const content = contentElement.getBoundingClientRect();
+      const actions = element.querySelector('.todo-actions').getBoundingClientRect();
+      const checkbox = element.querySelector(':scope > input[type="checkbox"]').getBoundingClientRect();
+      const contentStyle = getComputedStyle(contentElement);
+      return {
+        contentWidth: Math.round(content.width),
+        actionsWidth: Math.round(actions.width),
+        checkboxWidth: Math.round(checkbox.width),
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+        writingMode: contentStyle.writingMode,
+        textOrientation: contentStyle.textOrientation,
+      };
+    });
+    expect(metrics.contentWidth, width + 'px 제목 영역').toBeGreaterThan(180);
+    expect(metrics.actionsWidth, width + 'px 버튼 영역').toBeGreaterThan(180);
+    expect(metrics.checkboxWidth).toBeGreaterThanOrEqual(18);
+    expect(metrics.writingMode).toBe('horizontal-tb');
+    expect(metrics.textOrientation).toBe('mixed');
+    expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+  }
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  const lastTodo = page.locator('#todos .todo').filter({ hasText: lastTitle });
+  await lastTodo.locator('[data-todo-edit]').click();
+  await expect(page.locator('#todoText')).toHaveValue(lastTitle);
   await page.locator('#todoText').fill('모바일에서 수정한 할 일');
   await page.locator('#todoSubmit').click();
   await expect(page.locator('#todos')).toContainText('모바일에서 수정한 할 일');
