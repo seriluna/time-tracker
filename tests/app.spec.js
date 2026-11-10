@@ -2680,3 +2680,43 @@ test('기록 화면은 24시간 타임라인을 먼저 보여주고 Life by Desi
   await expect(page.locator('#dayTimeline')).toBeVisible();
   await expect(page.locator('#lifeByDesign')).toBeAttached();
 });
+
+
+test('기록·할 일·분석·백업 화면이 320px·360px·390px에서 가로 넘침 없이 표시됨', async ({ page }) => {
+  const widths = [320, 360, 390];
+
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 820 });
+    await page.reload();
+
+    const assertFits = async (label, selectors) => {
+      const metrics = await page.evaluate((items) => {
+        const viewport = document.documentElement.clientWidth;
+        const overflow = items.flatMap(selector => {
+          const element = document.querySelector(selector);
+          if (!element || !element.getClientRects().length) return [];
+          const rect = element.getBoundingClientRect();
+          return element.scrollWidth > element.clientWidth + 1 || rect.left < -1 || rect.right > viewport + 1
+            ? [{ selector, clientWidth: element.clientWidth, scrollWidth: element.scrollWidth, left: Math.round(rect.left), right: Math.round(rect.right) }]
+            : [];
+        });
+        return { viewport, document: document.documentElement.scrollWidth, body: document.body.scrollWidth, overflow };
+      }, selectors);
+
+      expect(metrics.document, width + 'px ' + label + ' document overflow').toBeLessThanOrEqual(metrics.viewport);
+      expect(metrics.body, width + 'px ' + label + ' body overflow').toBeLessThanOrEqual(metrics.viewport);
+      expect(metrics.overflow, width + 'px ' + label + ' element overflow').toEqual([]);
+    };
+
+    await page.locator('.advanced-panel summary').click();
+    await page.locator('.tools-menu summary').click();
+    await assertFits('기록 및 백업', ['#recordPanel', '#dayTimeline', '#timelineGrid', '#entryForm', '.tools-content', '.csv-range', '.auto-backup-panel', '.storage-health']);
+
+    await page.locator('.tools-menu summary').click();
+    await page.locator('[data-tab="todo"]').click();
+    await assertFits('할 일', ['#todoPanel', '#todoForm', '.todo-primary-row', '.todo-filters', '.todo-category-filters', '.todo-discovery-tools', '.todo-template-panel', '#todos']);
+
+    await page.locator('[data-tab="stats"]').click();
+    await assertFits('분석', ['#statsPanel', '.calendar-head', '.calendar-grid', '#stats', '#comparison', '#weekStats', '#monthStats', '#yearStats', '#periodCategoryStats']);
+  }
+});
