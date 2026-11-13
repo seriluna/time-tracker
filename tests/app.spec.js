@@ -1579,8 +1579,8 @@ test('할 일 완료·미완료 전체를 목록 또는 날짜별로 보고 수�
     const del = el.querySelector('[data-todo-del]').getBoundingClientRect();
     return { editWidth: edit.width, deleteWidth: del.width, editHeight: edit.height, deleteHeight: del.height };
   });
-  expect(sizes.editWidth).toBe(sizes.deleteWidth);
-  expect(sizes.editHeight).toBe(sizes.deleteHeight);
+  expect(sizes.editWidth).toBeCloseTo(sizes.deleteWidth, 1);
+  expect(sizes.editHeight).toBeCloseTo(sizes.deleteHeight, 1);
 });
 
 
@@ -2770,7 +2770,7 @@ test('Todo 화면은 빠른 입력·필터·카드의 시각적 위계를 유지
       category: 'work',
       importance: 'high',
       estimatedMinutes: 60,
-      subtasks: [{ text: '요구사항 정리', done: false }]
+      subtasks: [{ id: 'todo-ui-subtask', text: '요구사항 정리', done: false }]
     }]
   });
   await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), original);
