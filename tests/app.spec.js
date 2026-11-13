@@ -2757,3 +2757,69 @@ test('기록 입력 폼은 모바일에서 읽기 쉽고 터치하기 쉬운 크
   expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(originalData);
 });
 
+
+
+test('Todo 화면은 빠른 입력·필터·카드의 시각적 위계를 유지하고 저장 데이터를 변경하지 않음', async ({ page }) => {
+  const original = JSON.stringify({
+    entries: [],
+    todos: [{
+      id: 'todo-ui-check',
+      date: '2026-11-13',
+      text: '주간 프로젝트 기획 검토',
+      done: false,
+      category: 'work',
+      importance: 'high',
+      estimatedMinutes: 60,
+      subtasks: [{ text: '요구사항 정리', done: false }]
+    }]
+  });
+  await page.evaluate(raw => localStorage.setItem('time-tracker-v1', raw), original);
+  await page.reload();
+  await page.locator('[data-tab="todo"]').click();
+
+  await expect(page.locator('#todoForm')).toBeVisible();
+  await expect(page.locator('#todoText')).toBeVisible();
+  await expect(page.locator('#todoSubmit')).toBeVisible();
+  await expect(page.locator('#todoOptions')).toBeAttached();
+  await expect(page.locator('.todo-filters')).toBeVisible();
+  await expect(page.locator('.todo-category-filters')).toBeVisible();
+  await expect(page.locator('.todo-discovery-tools')).toBeVisible();
+  await expect(page.locator('.todo-view-modes')).toBeVisible();
+  await expect(page.locator('#todos .todo')).toContainText('주간 프로젝트 기획 검토');
+
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 820 });
+    const metrics = await page.evaluate(() => {
+      const rect = selector => {
+        const element = document.querySelector(selector);
+        const box = element.getBoundingClientRect();
+        return { width: Math.round(box.width), height: Math.round(box.height), right: Math.round(box.right) };
+      };
+      const viewport = document.documentElement.clientWidth;
+      return {
+        viewport,
+        documentWidth: document.documentElement.scrollWidth,
+        form: rect('#todoForm'),
+        input: rect('#todoText'),
+        submit: rect('#todoSubmit'),
+        card: rect('#todos .todo'),
+        action: rect('#todos .todo-action'),
+        filter: rect('.todo-filters'),
+        title: getComputedStyle(document.querySelector('#todos .todo-content')).writingMode,
+        formBackground: getComputedStyle(document.querySelector('#todoForm')).backgroundColor,
+        cardRadius: parseFloat(getComputedStyle(document.querySelector('#todos .todo')).borderRadius)
+      };
+    });
+    expect(metrics.documentWidth, width + 'px document overflow').toBeLessThanOrEqual(metrics.viewport);
+    expect(metrics.form.right, width + 'px Todo form').toBeLessThanOrEqual(metrics.viewport + 1);
+    expect(metrics.input.height).toBeGreaterThanOrEqual(44);
+    expect(metrics.submit.height).toBeGreaterThanOrEqual(44);
+    expect(metrics.action.height).toBeGreaterThanOrEqual(38);
+    expect(metrics.filter.width).toBeGreaterThan(0);
+    expect(metrics.title).toBe('horizontal-tb');
+    expect(metrics.formBackground).toBe('rgb(247, 242, 237)');
+    expect(metrics.cardRadius).toBeGreaterThanOrEqual(12);
+  }
+
+  expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(original);
+});
