@@ -412,3 +412,99 @@ footer { color: var(--tt-muted); }
   #todos .todo-subtask { flex-basis: 100%; }
   #todos .todo-subtask-action { flex: 1 1 0; }
 }
+
+/* Record entry form — focused, touch-friendly input with clear visual hierarchy. */
+#entryForm {
+  margin: 12px 0 18px;
+  padding: 15px;
+  gap: 13px;
+  background: var(--tt-surface-muted);
+  border: 1px solid var(--tt-border);
+  border-radius: 16px;
+  box-shadow: var(--tt-shadow);
+}
+#entryForm > label:first-child {
+  gap: 7px;
+  color: var(--tt-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+#entryForm > label:first-child input {
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid var(--tt-border);
+  border-radius: 11px;
+  background: var(--tt-surface);
+  font-size: 16px;
+}
+#entryForm .two { gap: 10px; }
+#entryForm .two label {
+  gap: 7px;
+  color: var(--tt-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+#entryForm .two input,
+#entryForm .two select,
+#entryForm .entry-advanced-content input,
+#entryForm .entry-advanced-content select {
+  min-height: 46px;
+  padding: 10px 11px;
+  border: 1px solid var(--tt-border);
+  border-radius: 10px;
+  background: var(--tt-surface);
+  font-size: 16px;
+}
+#entryForm .two input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
+#entryForm .entry-advanced {
+  overflow: hidden;
+  border: 1px solid var(--tt-border);
+  border-radius: 11px;
+  background: var(--tt-surface);
+}
+#entryForm .entry-advanced > summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--tt-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+#entryForm .entry-advanced > summary::after {
+  margin-left: auto;
+  padding-left: 10px;
+}
+#entryForm .entry-advanced-content {
+  padding: 12px;
+  border-top: 1px solid var(--tt-border);
+  gap: 12px;
+}
+#entryForm .entry-advanced-content label {
+  gap: 6px;
+  color: var(--tt-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+#entryForm .form-actions {
+  gap: 8px;
+  margin-top: 1px;
+}
+#entryForm .form-actions button {
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 650;
+}
+#entryForm #saveEntry {
+  box-shadow: 0 3px 9px rgba(156, 101, 107, .16);
+}
+@media (max-width: 380px) {
+  #entryForm { padding: 12px; gap: 11px; }
+  #entryForm .two { gap: 7px; }
+  #entryForm .entry-advanced-content { padding: 10px; }
+}
+
