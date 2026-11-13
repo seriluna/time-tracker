@@ -2720,3 +2720,40 @@ test('기록·할 일·분석·백업 화면이 320px·360px·390px에서 가로
     await assertFits('분석', ['#statsPanel', '.calendar-head', '.calendar-grid', '#stats', '#comparison', '#weekStats', '#monthStats', '#yearStats', '#periodCategoryStats']);
   }
 });
+
+test('기록 입력 폼은 모바일에서 읽기 쉽고 터치하기 쉬운 크기를 유지함', async ({ page }) => {
+  const originalData = await page.evaluate(() => localStorage.getItem('time-tracker-v1'));
+
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 820 });
+    const metrics = await page.locator('#entryForm').evaluate(form => {
+      const rect = form.getBoundingClientRect();
+      const name = form.querySelector('#name').getBoundingClientRect();
+      const start = form.querySelector('#start').getBoundingClientRect();
+      const end = form.querySelector('#end').getBoundingClientRect();
+      const save = form.querySelector('#saveEntry').getBoundingClientRect();
+      const style = getComputedStyle(form);
+      return {
+        formRight: Math.round(rect.right),
+        viewport: document.documentElement.clientWidth,
+        background: style.backgroundColor,
+        borderRadius: parseFloat(style.borderRadius),
+        nameHeight: Math.round(name.height),
+        startHeight: Math.round(start.height),
+        endHeight: Math.round(end.height),
+        saveHeight: Math.round(save.height)
+      };
+    });
+
+    expect(metrics.formRight, width + 'px 기록 폼 너비').toBeLessThanOrEqual(metrics.viewport + 1);
+    expect(metrics.background).toBe('rgb(247, 242, 237)');
+    expect(metrics.borderRadius).toBeGreaterThanOrEqual(14);
+    expect(metrics.nameHeight).toBeGreaterThanOrEqual(46);
+    expect(metrics.startHeight).toBeGreaterThanOrEqual(44);
+    expect(metrics.endHeight).toBeGreaterThanOrEqual(44);
+    expect(metrics.saveHeight).toBeGreaterThanOrEqual(44);
+  }
+
+  expect(await page.evaluate(() => localStorage.getItem('time-tracker-v1'))).toBe(originalData);
+});
+
